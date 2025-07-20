@@ -1,0 +1,22 @@
+[project]
+name = "tsxtract"
+version = "0.1.0"
+description = "Hardware-accelerated time series feature extraction using JAX"
+readme = "README.md"
+authors = [
+    { name = "Christian Seidler", email = "139808228+ctseidler@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "jax>=0.6.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.9.2",
+    "pytest>=8.4.1",
+]
