@@ -167,3 +167,8 @@ def estimate_computational_complexity_per_dataset_size(
         std: jax.Array = jnp.std(jnp.array(value)) * 1000
         worst_case: jax.Array = jnp.max(jnp.array(value)) * 1000
         stdout.write(f"{name}: {mean:.3f}ms ±{std:.3f}ms (Worst case: {worst_case:.3f}ms)\n")
+
+
+def parse_number(s: str) -> int | float:
+    """Parse a number from a string."""
+    return float(s) if "." in s else int(s)
