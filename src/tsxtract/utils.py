@@ -172,3 +172,10 @@ def estimate_computational_complexity_per_dataset_size(
 def parse_number(s: str) -> int | float:
     """Parse a number from a string."""
     return float(s) if "." in s else int(s)
+
+
+def convert_string_values_to_numeric(
+    config: list[dict[str, str]],
+) -> list[dict[str, int | float]]:
+    """Convert string values in config to numeric values."""
+    return [{k: parse_number(v) for k, v in d.items()} for d in config]
