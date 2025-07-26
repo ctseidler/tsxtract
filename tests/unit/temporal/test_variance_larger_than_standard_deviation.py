@@ -1,6 +1,6 @@
 """Unit tests for tsxtract.extraction.variance_larger_than_standard_deviation."""
 
-import tsxtract.extraction as tsx
+import tsxtract.extractors as tsx
 
 
 def test_ones(ones_array) -> None:

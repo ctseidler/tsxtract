@@ -3,7 +3,7 @@
 import jax.numpy as jnp
 import pytest
 
-import tsxtract.extraction as tsx
+import tsxtract.extractors as tsx
 
 
 def test_ones(ones_array) -> None:

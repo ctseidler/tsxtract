@@ -1,6 +1,6 @@
 """Unit tests for tsxtract.extraction.length."""
 
-import tsxtract.extraction as tsx
+import tsxtract.extractors as tsx
 
 
 def test_normal(normal_array) -> None:
