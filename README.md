@@ -61,12 +61,16 @@ Then, fork the repository and create a Pull-Request, once your feature is implem
 
 ## Roadmap
 
-- [ ] Refactor `extract_features` function
-- [ ] Set default values for feature extractors with parameters
-- [ ] Add interface for easy configuration of feature extraction configuration
-- [ ] Add JSON import and export for feature extraction configuration
+- [x] Refactor `extract_features` function
+- [x] Set default values for feature extractors with parameters
+- [x] Add interface for easy configuration of feature extraction configuration
+- [x] Add support to set feature extraction config from dict
+- [x] Add JSON import and export for feature extraction configuration
+- [ ] Add further unit tests to reach coverage of 100%
 - [ ] Add usage example
 - [ ] Add additional feature extractors
+- [x] Add support for custom features
+- [ ] Add custom error messages
 - [ ] Enhance feature extraction docstrings
 - [ ] Benchmark performance against Tsfresh & TSFEL
 - [ ] Enhance README
