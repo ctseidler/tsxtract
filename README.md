@@ -14,9 +14,11 @@ Step 2: Clone this repository: ```git clone https://github.com/ctseidler/tsxtrac
 
 Step 3: Create a new virtual environment: ```uv venv --python 3.12```
 
-Step 4: Install the package as editable from source: ```uv pip install -e .```
+Step 4: Activate the virtual environment: ```source .venv/bin/activate```
 
-Step 5: Test your setup by executing the `test.py` script: ```uv run test.py```
+Step 5: Install the package as editable from source: ```uv pip install -e .```
+
+Step 6: Test your setup by executing the `test.py` script: ```uv run test.py```
 
 
 ## Examples
