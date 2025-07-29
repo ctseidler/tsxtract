@@ -1,5 +1,7 @@
 """Module containing the feature extractors."""
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 
@@ -155,6 +157,97 @@ def count_below_mean(time_series: jax.Array) -> jax.Array:
 
 
 @jax.jit
+def distance(time_series: jax.Array) -> jax.Array:
+    """Calculate the distance traveled by the time series. FROM TSFEL"""
+    differences = jnp.diff(time_series).astype(float)
+    return jnp.sum(jnp.sqrt(1 + differences**2))
+
+
+@jax.jit
+def first_location_of_maximum(time_series: jax.Array) -> jax.Array:
+    """Get the relative first location of the maximum value of the time series."""
+    return (
+        jnp.argmax(time_series) / len(time_series) if len(time_series) > 0 else jnp.arange(jnp.nan)
+    )
+
+
+@jax.jit
+def first_location_of_minimum(time_series: jax.Array) -> jax.Array:
+    """Get the relative first location of the minimal value of the time series."""
+    return (
+        jnp.argmin(time_series) / len(time_series) if len(time_series) > 0 else jnp.arange(jnp.nan)
+    )
+
+
+@jax.jit
+def interquartile_range(time_series: jax.Array) -> jax.Array:
+    """Calculate the interquartile range of the time series. FROM TSFEL"""
+    return jnp.percentile(time_series, 75) - jnp.percentile(time_series, 25)
+
+
+@jax.jit
+def is_symmetric(time_series: jax.Array, value: jax.Array) -> jax.Array:
+    """Check if the distribution of the time series looks symmetric."""
+    mean_median_difference: jax.Array = jnp.abs(jnp.mean(time_series) - jnp.median(time_series))
+    max_min_difference: jax.Array = jnp.max(time_series) - jnp.min(time_series)
+
+    return mean_median_difference < (value * max_min_difference)
+
+
+# TODO: Check if this feature is calculated correctly
+@jax.jit
+def has_duplicate(time_series: jax.Array) -> jax.Array:
+    """Check if any value in the time series occurs more than once."""
+    return jnp.array(time_series.size != jnp.unique(time_series, size=len(time_series)))
+
+
+@jax.jit
+def has_duplicate_max(time_series: jax.Array) -> jax.Array:
+    """Check if the maximum of the time series is observed more than once."""
+    return jnp.sum(time_series == jnp.max(time_series)) > 1
+
+
+@jax.jit
+def has_duplicate_min(time_series: jax.Array) -> jax.Array:
+    """Check if the minimal value of the time series is observed more than once."""
+    return jnp.sum(time_series == jnp.min(time_series)) > 1
+
+
+@partial(jax.jit, static_argnums=1)
+def hist_mode(time_series: jax.Array, n_bins: int) -> jax.Array:
+    """Calculate the mode of a histogram using a given number of bins. FROM TSFEL"""
+    hist_values, bin_edges = jnp.histogram(time_series, bins=n_bins)
+    max_bin_idx = jnp.argmax(hist_values)
+    return (bin_edges[max_bin_idx] + bin_edges[max_bin_idx + 1]) / 2.0
+
+
+@jax.jit
+def large_standard_deviation(time_series: jax.Array, value: float) -> jax.Array:
+    """Does the time series has a large standard deviation?"""
+    return jnp.std(time_series) > (value * (jnp.max(time_series) - jnp.min(time_series)))
+
+
+@jax.jit
+def last_location_of_maximum(time_series: jax.Array) -> jax.Array:
+    """Get the relative last location of the maximum value of the time series."""
+    return (
+        jnp.array(1.0 - jnp.argmax(time_series[::-1]) / len(time_series))
+        if len(time_series) > 0
+        else jnp.array(jnp.nan)
+    )
+
+
+@jax.jit
+def last_location_of_minimum(time_series: jax.Array) -> jax.Array:
+    """Get the relative last location of the minimal value of the time series."""
+    return (
+        jnp.array(1.0 - jnp.argmin(time_series[::-1]) / len(time_series))
+        if len(time_series) > 0
+        else jnp.array(jnp.nan)
+    )
+
+
+@jax.jit
 def length(time_series: jax.Array) -> int:
     """Calculate the length of the time series.
 
@@ -212,6 +305,33 @@ def mean(time_series: jax.Array) -> jax.Array:
 
 
 @jax.jit
+def mean_abs_change(time_series: jax.Array) -> jax.Array:
+    """Average over first differences."""
+    return jnp.mean(jnp.abs(jnp.diff(time_series)))
+
+
+@jax.jit
+def mean_change(time_series: jax.Array) -> jax.Array:
+    """Average over time series differences."""
+    return (
+        (time_series[-1] - time_series[0]) / (len(time_series) - 1)
+        if len(time_series) > 1
+        else jnp.array(jnp.nan)
+    )
+
+
+@jax.jit
+def mean_second_derivative_central(time_series: jax.Array) -> jax.Array:
+    """Get the mean value of a central approximation of the second derivative."""
+    return (
+        (time_series[-1] - time_series[-2] - time_series[1] + time_series[0])
+        / (2 * (len(time_series) - 2))
+        if len(time_series) > 2
+        else jnp.array(jnp.nan)
+    )
+
+
+@jax.jit
 def median(time_series: jax.Array) -> jax.Array:
     """Calculate the median of the time series.
 
@@ -230,6 +350,18 @@ def median(time_series: jax.Array) -> jax.Array:
 
 
 @jax.jit
+def median_change(time_series: jax.Array) -> jax.Array:
+    """Calculate the median differences in the time series. FROM TSFEL"""
+    return jnp.median(jnp.diff(time_series))
+
+
+@jax.jit
+def median_abs_change(time_series: jax.Array) -> jax.Array:
+    """Calculate the median absoluve differences in the time series. FROM TSFEL"""
+    return jnp.median(jnp.abs(jnp.diff(time_series)))
+
+
+@jax.jit
 def minimum(time_series: jax.Array) -> jax.Array:
     """Calculate the minimum of the time series.
 
@@ -245,6 +377,58 @@ def minimum(time_series: jax.Array) -> jax.Array:
 
     """
     return jnp.min(time_series)
+
+
+@jax.jit
+def negative_turning_points(time_series: jax.Array) -> jax.Array:
+    """Get the number of negative turning points in the time series. FROM TSFEL"""
+    differences = jnp.diff(time_series)
+    array_signal = jnp.arange(len(differences[:-1]))
+    negative_turning_points = jnp.where(
+        (differences[array_signal] < 0) & (differences[array_signal + 1] > 0), size=len(time_series)
+    )[0]
+
+    return jnp.array(negative_turning_points.size)
+
+
+@jax.jit
+def peak_to_peak_distance(time_series: jax.Array) -> jax.Array:
+    """Calculate the peak to peak distance."""
+    return jnp.abs(jnp.max(time_series) - jnp.min(time_series))
+
+
+@jax.jit
+def percentage_of_reoccuring_values_to_all_values(time_series: jax.Array) -> jax.Array:
+    """Get the percentage of values that are present more than once in the time series."""
+    if len(time_series) == 0:
+        return jnp.array(jnp.nan)
+
+    counts: jax.Array = jnp.array(jnp.unique_counts(time_series, size=len(time_series)))
+
+    if counts.shape[0] == 0:
+        return jnp.array(0.0)
+
+    return jnp.sum(counts > 1) / float(counts.shape[0])
+
+
+@jax.jit
+def positive_turning_points(time_series: jax.Array) -> jax.Array:
+    """Get the number of positive turning points in the time series. FROM TSFEL"""
+    differences = jnp.diff(time_series)
+    array_signal = jnp.arange(len(differences[:-1]))
+    positive_turning_points = jnp.where(
+        (differences[array_signal + 1] < 0) & (differences[array_signal] > 0), size=len(time_series)
+    )[0]
+
+    return jnp.array(positive_turning_points.size)
+
+
+@jax.jit
+def quantile(time_series: jax.Array, value: float) -> jax.Array:
+    """Calculate the q quantile of the time series."""
+    if len(time_series) == 0:
+        return jnp.array(jnp.nan)
+    return jnp.quantile(time_series, value)
 
 
 @jax.jit
@@ -270,6 +454,15 @@ def range_count(time_series: jax.Array, lower_bound: float, upper_bound: float) 
 
 
 @jax.jit
+def ratio_beyond_r_sigma(time_series: jax.Array, value: float) -> jax.Array:
+    """Ratio of values that are more than value * std(time_series) away from the mean."""
+    return (
+        jnp.sum(jnp.abs(time_series - jnp.mean(time_series)) > value * jnp.std(time_series))
+        / time_series.size
+    )
+
+
+@jax.jit
 def root_mean_square(time_series: jax.Array) -> jax.Array:
     """Calculate the root mean square of the values.
 
@@ -285,6 +478,13 @@ def root_mean_square(time_series: jax.Array) -> jax.Array:
 
     """
     return jnp.sqrt(jnp.mean(jnp.square(time_series)))
+
+
+@jax.jit
+def slope(time_series: jax.Array) -> jax.Array:
+    """Calculate the slope of the time series. FROM TSFEL"""
+    t = jnp.linspace(0, len(time_series) - 1, len(time_series))
+    return jnp.polyfit(t, time_series, 1)[0]
 
 
 @jax.jit
@@ -397,3 +597,9 @@ def variance_larger_than_standard_deviation(time_series: jax.Array) -> jax.Array
 
     """
     return jnp.var(time_series) > jnp.std(time_series)
+
+
+@jax.jit
+def zero_cross_rate(time_series: jax.Array) -> jax.Array:
+    """Calculate the zero-crossing rate of the time series. FROM TSFEL"""
+    return jnp.array(len(jnp.where(jnp.diff(jnp.sign(time_series)), size=len(time_series))[0]))

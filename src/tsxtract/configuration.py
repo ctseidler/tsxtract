@@ -81,12 +81,19 @@ class ExtractionConfiguration:
             {
                 "count_above": [{"value": 0}],
                 "count_below": [{"value": 0}],
-                "value_count": [{"value": value} for value in [-1, 0, 1]],
+                "hist_mode": [{"n_bins": 5}, {"n_bins": 10}],
+                "is_symmetric": [{"value": value * 0.05} for value in range(20)],
+                "large_standard_deviation": [{"value": value * 0.05} for value in range(1, 20)],
+                "quantile": [{"value": q} for q in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]],
                 "range_count": [
                     {"lower_bound": -1, "upper_bound": 1},
                     {"lower_bound": -1e12, "upper_bound": 0},
                     {"lower_bound": 0, "upper_bound": 1e12},
                 ],
+                "ratio_beyond_r_sigma": [
+                    {"value": x} for x in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]
+                ],
+                "value_count": [{"value": value} for value in [-1, 0, 1]],
             },
         )
 
