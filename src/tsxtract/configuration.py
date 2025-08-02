@@ -79,12 +79,18 @@ class ExtractionConfiguration:
         """
         settings_per_feature.update(
             {
+                "autocorrelation": [{"lag": lag} for lag in range(10)],
+                "binned_entropy": [{"max_bins": max_bins} for max_bins in [10]],
+                "c3": [{"lag": lag} for lag in range(1, 4)],
                 "count_above": [{"value": 0}],
                 "count_below": [{"value": 0}],
                 "hist_mode": [{"n_bins": 5}, {"n_bins": 10}],
                 "is_symmetric": [{"value": value * 0.05} for value in range(20)],
                 "large_standard_deviation": [{"value": value * 0.05} for value in range(1, 20)],
                 "quantile": [{"value": q} for q in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]],
+                "mean_n_absolute_max": [{"number_of_maxima": n} for n in [3, 5, 7]],
+                "number_crossing_m": [{"m": m} for m in [-1, 0, 1]],
+                "number_peaks": [{"support": n} for n in [1, 3, 5, 10, 50]],
                 "range_count": [
                     {"lower_bound": -1, "upper_bound": 1},
                     {"lower_bound": -1e12, "upper_bound": 0},
@@ -93,6 +99,7 @@ class ExtractionConfiguration:
                 "ratio_beyond_r_sigma": [
                     {"value": x} for x in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]
                 ],
+                "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
                 "value_count": [{"value": value} for value in [-1, 0, 1]],
             },
         )

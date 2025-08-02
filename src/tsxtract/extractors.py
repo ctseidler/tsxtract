@@ -80,6 +80,53 @@ def absolute_sum_values(time_series: jax.Array) -> jax.Array:
     return jnp.sum(jnp.absolute(time_series))
 
 
+@partial(jax.jit, static_argnames=["lag"])
+def autocorrelation(time_series: jax.Array, lag: int) -> jax.Array:
+    """Calculate the autocorrelation of the specified lag."""
+    if len(time_series) < lag:
+        return jnp.array(jnp.nan)
+
+    subseries_1 = time_series[: (len(time_series) - lag)]
+    subseries_2 = time_series[lag:]
+
+    ts_mean = jnp.mean(time_series)
+    sum_product = jnp.sum((subseries_1 - ts_mean) * (subseries_2 - ts_mean))
+
+    v = jnp.var(time_series)
+
+    return jax.lax.cond(
+        jnp.isclose(v, 0),
+        lambda _: jnp.array(jnp.nan),
+        lambda _: sum_product / ((len(time_series) - lag) * v),
+        operand=None,
+    )
+
+
+@partial(jax.jit, static_argnums=1)
+def binned_entropy(time_series: jax.Array, max_bins: int) -> jax.Array:
+    """Bin the values of the time series and calculate the entropy."""
+    hist, _ = jnp.histogram(time_series, bins=max_bins)
+    probs = hist / time_series.size
+    probs = jnp.where(probs == 0, 1, probs)
+
+    return -jnp.sum(probs * jnp.log(probs))
+
+
+@partial(jax.jit, static_argnums=1)
+def c3(time_series: jax.Array, lag: int) -> jax.Array:
+    """Measure the linearity in the time series using c3 statistic."""
+    n = time_series.size
+
+    if 2 * lag >= n:
+        return jnp.array(0.0)
+
+    return jnp.mean(
+        (jnp.roll(time_series, 2 * -lag) * jnp.roll(time_series, -lag) * time_series)[
+            0 : (n - 2 * lag)
+        ],
+    )
+
+
 @jax.jit
 def count_above(time_series: jax.Array, value: float) -> jax.Array:
     """Calculate the percentage of values in the time series that are above value.
@@ -320,6 +367,20 @@ def mean_change(time_series: jax.Array) -> jax.Array:
     )
 
 
+@partial(jax.jit, static_argnums=1)
+def mean_n_absolute_max(time_series: jax.Array, number_of_maxima: int) -> jax.Array:
+    """Calculate the mean of the n absolute maximum values of the time series."""
+    assert number_of_maxima > 0
+
+    n_absolute_maximum_values = jnp.sort(jnp.absolute(time_series))[-number_of_maxima:]
+
+    return (
+        jnp.mean(n_absolute_maximum_values)
+        if len(time_series) > number_of_maxima
+        else jnp.array(jnp.nan)
+    )
+
+
 @jax.jit
 def mean_second_derivative_central(time_series: jax.Array) -> jax.Array:
     """Get the mean value of a central approximation of the second derivative."""
@@ -385,10 +446,37 @@ def negative_turning_points(time_series: jax.Array) -> jax.Array:
     differences = jnp.diff(time_series)
     array_signal = jnp.arange(len(differences[:-1]))
     negative_turning_points = jnp.where(
-        (differences[array_signal] < 0) & (differences[array_signal + 1] > 0), size=len(time_series)
+        (differences[array_signal] < 0) & (differences[array_signal + 1] > 0),
+        size=len(time_series),
     )[0]
 
     return jnp.array(negative_turning_points.size)
+
+
+@partial(jax.jit, static_argnames=["m"])
+def number_crossing_m(time_series: jax.Array, m: float) -> jax.Array:
+    """Calculate the number of crossings of the time series on m."""
+    positive = time_series > m
+    return jnp.array(jnp.where(jnp.diff(positive), size=len(time_series))[0].size)
+
+
+@partial(jax.jit, static_argnums=1)
+def number_peaks(time_series: jax.Array, support: int) -> jax.Array:
+    """Calculate the number of peaks of at least support in the time series."""
+    ts_reduced = time_series[support:-support]
+
+    result = None
+    for i in range(1, support + 1):
+        result_first = ts_reduced > jnp.roll(time_series, i)[support:-support]
+
+        if result is None:
+            result = result_first
+        else:
+            result &= result_first
+
+        result &= ts_reduced > jnp.roll(time_series, -i)[support:-support]
+
+    return jnp.sum(result)
 
 
 @jax.jit
@@ -398,7 +486,7 @@ def peak_to_peak_distance(time_series: jax.Array) -> jax.Array:
 
 
 @jax.jit
-def percentage_of_reoccuring_values_to_all_values(time_series: jax.Array) -> jax.Array:
+def percentage_of_reoccurring_values_to_all_values(time_series: jax.Array) -> jax.Array:
     """Get the percentage of values that are present more than once in the time series."""
     if len(time_series) == 0:
         return jnp.array(jnp.nan)
@@ -417,7 +505,8 @@ def positive_turning_points(time_series: jax.Array) -> jax.Array:
     differences = jnp.diff(time_series)
     array_signal = jnp.arange(len(differences[:-1]))
     positive_turning_points = jnp.where(
-        (differences[array_signal + 1] < 0) & (differences[array_signal] > 0), size=len(time_series)
+        (differences[array_signal + 1] < 0) & (differences[array_signal] > 0),
+        size=len(time_series),
     )[0]
 
     return jnp.array(positive_turning_points.size)
@@ -459,6 +548,16 @@ def ratio_beyond_r_sigma(time_series: jax.Array, value: float) -> jax.Array:
     return (
         jnp.sum(jnp.abs(time_series - jnp.mean(time_series)) > value * jnp.std(time_series))
         / time_series.size
+    )
+
+
+@jax.jit
+def ratio_value_number_to_time_series_length(time_series: jax.Array) -> jax.Array:
+    """Ratio of unique values to all values."""
+    return (
+        jnp.array(jnp.nan)
+        if time_series.size == 0
+        else jnp.unique(time_series, size=len(time_series)).size / time_series.size
     )
 
 
@@ -506,6 +605,23 @@ def standard_deviation(time_series: jax.Array) -> jax.Array:
 
 
 @jax.jit
+def sum_of_reoccurring_values(time_series: jax.Array) -> jax.Array:
+    """Calculate the sum of all values that appear in the time series more than once."""
+    unique, counts = jnp.unique_counts(time_series, size=len(time_series))
+    counts = counts.at[jnp.where(counts < 2, counts, 0)].set(0)
+    counts = counts.at[jnp.where(counts > 1, counts, 0)].set(1)
+    return jnp.sum(counts * unique)
+
+
+@jax.jit
+def sum_of_reoccurring_data_points(time_series: jax.Array) -> jax.Array:
+    """Calculate the sum of all data points that appear in the time series more than once."""
+    unique, counts = jnp.unique_counts(time_series, size=len(time_series))
+    counts = counts.at[jnp.where(counts < 2, counts, 0)].set(0)
+    return jnp.sum(counts * unique)
+
+
+@jax.jit
 def sum_values(time_series: jax.Array) -> jax.Array:
     """Calculate the sum of values of the time series.
 
@@ -521,6 +637,21 @@ def sum_values(time_series: jax.Array) -> jax.Array:
 
     """
     return jnp.sum(time_series)
+
+
+@partial(jax.jit, static_argnums=1)
+def time_reversal_asymmetry_statistic(time_series: jax.Array, lag: int) -> jax.Array:
+    """Calculate the time reversal asymmetry statistic."""
+    n = len(time_series)
+    if 2 * lag >= n:
+        return jnp.array(0.0)
+
+    one_lag = jnp.roll(time_series, -lag)
+    two_lag = jnp.roll(time_series, 2 * -lag)
+
+    return jnp.mean(
+        (two_lag * two_lag * one_lag - one_lag * time_series * time_series)[0 : (n - 2 * lag)],
+    )
 
 
 @jax.jit
@@ -597,6 +728,14 @@ def variance_larger_than_standard_deviation(time_series: jax.Array) -> jax.Array
 
     """
     return jnp.var(time_series) > jnp.std(time_series)
+
+
+@jax.jit
+def variation_coefficient(time_series: jax.Array) -> jax.Array:
+    """Calculate the variation coefficient."""
+    avg: jax.Array = jnp.mean(time_series)
+
+    return jnp.where(avg == 0, jnp.array(jnp.nan), jnp.std(time_series) / avg)
 
 
 @jax.jit
