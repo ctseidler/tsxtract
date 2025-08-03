@@ -1,85 +1,75 @@
 """Unit tests for tsxtract.extraction.absolute_energy."""
 
 import jax.numpy as jnp
+import pytest
 
 import tsxtract.extractors as tsx
 
 
-def test_ones(ones_array) -> None:
-    """tsx.absolute_energy should return 100 for a time series with 100 ones."""
-    expected_output: int = 100
-    assert tsx.absolute_energy(ones_array) == expected_output
+@pytest.mark.parametrize(
+    "array, expected",
+    [
+        (jnp.ones(5), 5),  # all ones
+        (jnp.zeros(5), 0),  # all zeros
+        (-jnp.ones(5), 5),  # all negative ones
+        (jnp.array([1, -1, 1, -1]), 4),  # alternating ±1
+        (jnp.array([0, 1, 0, 1]), 2),  # half zeros, half ones
+    ],
+)
+def test_constant_and_mixed_arrays(array, expected):
+    """Absolute energy should match sum of squares for constant and mixed arrays."""
+    assert tsx.absolute_energy(array) == expected
 
 
-def test_zeros(zeros_array) -> None:
-    """tsx.absolute_energy should return 0 for a time series with 100 zeros."""
-    expected_output: int = 0
-    assert tsx.absolute_energy(zeros_array) == expected_output
+def test_single_point(single_point):
+    """Absolute energy of one value is its square."""
+    expected = single_point**2
+    assert tsx.absolute_energy(single_point) == expected
 
 
-def test_negatives(negatives_array) -> None:
-    """tsx.absolute_energy should return 100 for a time series with 100 -1 values."""
-    expected_output: int = 100
-    assert tsx.absolute_energy(negatives_array) == expected_output
+def test_empty(empty_array):
+    """Empty sequence should have zero absolute energy."""
+    assert tsx.absolute_energy(empty_array) == 0
 
 
-def test_single_point(single_point) -> None:
-    """tsx.absolute_energy should return the squared value for a single datapoint."""
-    expected_output: float = single_point**2
-    assert tsx.absolute_energy(single_point) == expected_output
+@pytest.mark.parametrize(
+    "array",
+    [
+        jnp.array([jnp.nan] * 5),  # all NaN
+        jnp.array([1, 2, jnp.nan, 3], dtype=jnp.float32),  # mixed NaN
+    ],
+)
+def test_nan_handling(array):
+    """Absolute energy should be NaN if any NaN is present."""
+    assert jnp.isnan(tsx.absolute_energy(array))
 
 
-def test_empty(empty_array) -> None:
-    """tsx.absolute_energy should return 0 for an empty sequence."""
-    expected_output: int = 0
-    assert tsx.absolute_energy(empty_array) == expected_output
+@pytest.mark.parametrize(
+    "array",
+    [
+        jnp.array([jnp.inf] * 5),  # all Inf
+        jnp.array([1, 2, jnp.inf, 3], dtype=jnp.float32),  # mixed Inf
+    ],
+)
+def test_inf_handling(array):
+    """Absolute energy should be Inf if any Inf is present."""
+    assert jnp.isinf(tsx.absolute_energy(array))
 
 
-def test_nan_values(nan_array) -> None:
-    """tsx.absolute_energy should return nan for an array with 100 nan values."""
-    assert jnp.isnan(tsx.absolute_energy(nan_array))
+def test_large_numbers():
+    """Large numbers should not overflow to NaN in float32."""
+    arr = jnp.array([1e10, 1e10, 1e10, 1e10])
+    assert jnp.isfinite(tsx.absolute_energy(arr))
 
 
-def test_array_with_nan_values(array_with_nan) -> None:
-    """tsx.absolute_energy should return nan for an array with 20 nan values."""
-    assert jnp.isnan(tsx.absolute_energy(array_with_nan))
-
-
-def test_inf_values(inf_array) -> None:
-    """tsx.absolute_energy should return inf for an array with 100 inf values."""
-    assert jnp.isinf(tsx.absolute_energy(inf_array))
-
-
-def test_array_with_inf_values(array_with_inf) -> None:
-    """tsx.absolute_energy should return a numeric for an array with 20 inf values."""
-    assert jnp.isreal(tsx.absolute_energy(array_with_inf))
-
-
-def test_50_50(array_50_50) -> None:
-    """tsx.absolute_energy should return 50 for a time series with 50 zeros and 50 ones."""
-    expected_output: int = 50
-    assert tsx.absolute_energy(array_50_50) == expected_output
-
-
-def test_20_80(array_20_80) -> None:
-    """tsx.absolute_energy should return 80 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 80
-    assert tsx.absolute_energy(array_20_80) == expected_output
-
-
-def test_positive_range(array_positive_range) -> None:
-    """tsx.absolute_energy should return 850 for a range from 0 to 100."""
-    expected_output: int = 338350
-    assert tsx.absolute_energy(array_positive_range) == expected_output
-
-
-def test_negative_range(array_negative_range) -> None:
-    """tsx.absolute_energy should return 338350 for a range from -100 to 0."""
-    expected_output: int = 338350
-    assert tsx.absolute_energy(array_negative_range) == expected_output
-
-
-def test_positive_and_negative_range(array_positive_and_negative_range) -> None:
-    """tsx.absolute_energy should return 85850 for a range from -50 to 50."""
-    expected_output: int = 85850
-    assert tsx.absolute_energy(array_positive_and_negative_range) == expected_output
+@pytest.mark.parametrize(
+    "array, expected",
+    [
+        (jnp.arange(0, 101), 338350),  # 0..100
+        (jnp.arange(-100, 1), 338350),  # -100..0
+        (jnp.arange(-50, 51), 85850),  # -50..50
+    ],
+)
+def test_ranges(array, expected):
+    """Absolute energy for numeric ranges should match manual sum of squares."""
+    assert tsx.absolute_energy(array) == expected

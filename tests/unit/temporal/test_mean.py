@@ -6,62 +6,70 @@ import pytest
 import tsxtract.extractors as tsx
 
 
-def test_ones(ones_array) -> None:
-    """tsx.mean should return 1 for a time series with 100 ones."""
-    expected_output: int = 1
-    assert tsx.mean(ones_array) == expected_output
+@pytest.mark.parametrize(
+    "arr, expected",
+    [
+        ("ones_array", 1),
+        ("zeros_array", 0),
+        ("negatives_array", -1),
+    ],
+)
+def test_constant_arrays(arr, expected, request) -> None:
+    """Mean of constant-valued arrays should equal that constant."""
+    data = request.getfixturevalue(arr)
+    assert tsx.mean(data) == expected
 
 
-def test_zeros(zeros_array) -> None:
-    """tsx.mean should return 0 for a time series with 100 zeros."""
-    expected_output: int = 0
-    assert tsx.mean(zeros_array) == expected_output
+def test_single_value(single_point) -> None:
+    """Mean of a single point should equal that value."""
+    assert tsx.mean(single_point) == single_point
 
 
-def test_negatives(negatives_array) -> None:
-    """tsx.mean should return -1 for a time series with 100 -1 values."""
-    expected_output: int = -1
-    assert tsx.mean(negatives_array) == expected_output
-
-
-def test_single_point(single_point) -> None:
-    """tsx.mean should return the value for a single datapoint."""
-    expected_output: float = single_point
-    assert tsx.mean(single_point) == expected_output
-
-
-def test_empty(empty_array) -> None:
-    """tsx.mean should return nan for an empty sequence."""
+def test_empty_array(empty_array) -> None:
+    """Mean of empty array should be NaN."""
     assert jnp.isnan(tsx.mean(empty_array))
 
 
-def test_nan_values(nan_array) -> None:
-    """tsx.mean should return nan for an array with 100 nan values."""
-    assert jnp.isnan(tsx.mean(nan_array))
+@pytest.mark.parametrize(
+    "arr_fixture",
+    ["nan_array", "array_with_nan"],
+)
+def test_nan_propagation(arr_fixture, request) -> None:
+    """Mean should be NaN if array contains only NaNs or any NaNs."""
+    arr = request.getfixturevalue(arr_fixture)
+    assert jnp.isnan(tsx.mean(arr))
 
 
-def test_array_with_nan_values(array_with_nan) -> None:
-    """tsx.mean should return nan for an array with 80 normal values and 20 nan values."""
-    assert jnp.isnan(tsx.mean(array_with_nan))
+@pytest.mark.parametrize(
+    "arr_fixture",
+    ["inf_array", "array_with_inf"],
+)
+def test_inf_propagation(arr_fixture, request) -> None:
+    """Mean should be Inf if array contains only Infs or any Inf."""
+    arr = request.getfixturevalue(arr_fixture)
+    assert jnp.isinf(tsx.mean(arr))
 
 
-def test_inf_values(inf_array) -> None:
-    """tsx.mean should return inf for an array with 100 inf values."""
-    assert jnp.isinf(tsx.mean(inf_array))
+@pytest.mark.parametrize(
+    "arr_fixture, expected",
+    [
+        ("array_50_50", 0.5),
+        ("array_20_80", 0.8),
+    ],
+)
+def test_finite_mixed_arrays(arr_fixture, expected, request) -> None:
+    """Mean of mixed finite arrays should be computed correctly."""
+    arr = request.getfixturevalue(arr_fixture)
+    assert tsx.mean(arr) == pytest.approx(expected)
 
 
-def test_array_with_inf_values(array_with_inf) -> None:
-    """tsx.mean should return inf for an array with 80 normal values and 20 inf values."""
-    assert jnp.isinf(tsx.mean(array_with_inf))
+def test_nan_inf_finite_mix(nan_inf_finite_array) -> None:
+    """Mean should be NaN if NaN is present, even if Inf and finite values exist."""
+    assert jnp.isnan(tsx.mean(nan_inf_finite_array))
 
 
-def test_50_50(array_50_50) -> None:
-    """tsx.mean should return 0.5 for a time series with 50 zeros and 50 ones."""
-    expected_output: float = 0.5
-    assert tsx.mean(array_50_50) == expected_output
-
-
-def test_20_80(array_20_80) -> None:
-    """tsx.mean should return 0.8 for a time series with 20 zeros and 80 ones."""
-    expected_output: float = 0.8
-    assert tsx.mean(array_20_80) == pytest.approx(expected_output)
+def test_large_numbers(large_numbers_array) -> None:
+    """Mean should handle very large numbers without overflow to Inf."""
+    result = tsx.mean(large_numbers_array)
+    assert not jnp.isinf(result)
+    assert not jnp.isnan(result)

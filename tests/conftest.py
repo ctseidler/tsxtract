@@ -7,109 +7,103 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-
-@pytest.fixture
-def normal_array() -> jax.Array:
-    """Create a random jax.Array with length 100."""
-    return jax.random.normal(jax.random.key(0), shape=(100,))
+# @pytest.fixture
+# def normal_array() -> jax.Array:
+#     """Random array with 5 normal-distributed values."""
+#     return jax.random.normal(jax.random.key(0), shape=(5,))
 
 
 @pytest.fixture
 def ones_array() -> jax.Array:
-    """Create a jax.Array with length 100 containing only ones."""
-    return jax.numpy.ones(shape=(100,))
+    """Array containing only ones."""
+    return jnp.ones(5)
 
 
 @pytest.fixture
 def zeros_array() -> jax.Array:
-    """Create a jax.Array with length 100 containing only zeros."""
-    return jax.numpy.zeros(shape=(100,))
+    """Array containing only zeros."""
+    return jnp.zeros(5)
 
 
 @pytest.fixture
 def negatives_array() -> jax.Array:
-    """Create a jax.Array with length 100 containing only negative values."""
-    signal: jax.Array = jax.numpy.ones(shape=(100,))
-    signal: jax.Array = signal.at[:].set(-1)
-    return signal
+    """Array containing only -1."""
+    return jnp.full(5, -1.0)
 
 
 @pytest.fixture
 def single_point() -> jax.Array:
-    """Create a jax.Array with length 1."""
-    return jax.random.normal(key=jax.random.key(0), shape=(1,))
+    """Array with a single value."""
+    return jnp.array([3.14])
 
 
 @pytest.fixture
 def empty_array() -> jax.Array:
-    """Create a jax.Array containing no values."""
-    return jax.random.normal(jax.random.key(0), shape=(0,))
+    """Empty array."""
+    return jnp.array([])
 
 
 @pytest.fixture
 def nan_array() -> jax.Array:
-    """Create a jax.Array containing only nan values."""
-    signal: jax.Array = jax.random.normal(jax.random.key(0), shape=(100,))
-    signal: jax.Array = signal.at[:].set(jnp.nan)
-    return signal
+    """Array containing only NaNs."""
+    return jnp.full(5, jnp.nan)
 
 
 @pytest.fixture
 def array_with_nan() -> jax.Array:
-    """Create a jax.Array with 80 normal values and 20 nan values."""
-    signal: jax.Array = jax.random.normal(jax.random.key(0), shape=(100,))
-    signal: jax.Array = signal.at[:20].set(jnp.nan)
-    return signal
+    """Array with finite values and some NaNs."""
+    return jnp.array([1.0, 2.0, jnp.nan, 4.0, 5.0])
 
 
 @pytest.fixture
 def inf_array() -> jax.Array:
-    """Create a jax.Array containing only inf values."""
-    signal: jax.Array = jax.random.normal(jax.random.key(0), shape=(100,))
-    signal: jax.Array = signal.at[:].set(jnp.inf)
-    return signal
+    """Array containing only +Inf."""
+    return jnp.full(5, jnp.inf)
 
 
 @pytest.fixture
 def array_with_inf() -> jax.Array:
-    """Create a jax.Array with 80 normal values and 20 inf values."""
-    signal: jax.Array = jax.random.normal(jax.random.key(0), shape=(100,))
-    signal: jax.Array = signal.at[:20].set(jnp.inf)
-    return signal
+    """Array with finite values and some +Inf."""
+    return jnp.array([1.0, 2.0, jnp.inf, 4.0, 5.0])
 
 
 @pytest.fixture
 def array_50_50() -> jax.Array:
-    """Create a jax.Array with 50 zeros and 50 ones."""
-    signal: jax.Array = jax.numpy.ones(shape=(100,))
-    signal: jax.Array = signal.at[:50].set(0)
-    return signal
+    """Half zeros, half ones."""
+    return jnp.array([0, 0, 1, 1])
 
 
 @pytest.fixture
 def array_20_80() -> jax.Array:
-    """Create a jax.Array with 20 zeros and 80 ones."""
-    signal: jax.Array = jax.numpy.ones(shape=(100,))
-    signal: jax.Array = signal.at[:20].set(0)
-    return signal
+    """20% zeros, 80% ones."""
+    return jnp.array([0, 1, 1, 1, 1])
+
+
+# @pytest.fixture
+# def array_positive_range() -> jax.Array:
+#     """Positive integer range."""
+#     return jnp.arange(5)  # 0..4
+
+
+# @pytest.fixture
+# def array_negative_range() -> jax.Array:
+#     """Negative integer range."""
+#     return jnp.arange(0, -5, -1)  # 0..-4
+
+
+# @pytest.fixture
+# def array_positive_and_negative_range() -> jax.Array:
+#     """Mixed negative and positive range."""
+#     return jnp.arange(-2, 3)  # -2..2
 
 
 @pytest.fixture
-def array_positive_range() -> jax.Array:
-    """Create a jax.Array with 100 values from 0 to 100."""
-    signal: jax.Array = jax.numpy.arange(start=0, stop=101)
-    return signal
+def nan_inf_finite_array() -> jax.Array:
+    """Array with NaN, Inf, and finite values."""
+    return jnp.array([jnp.nan, jnp.inf, 1.0, 2.0])
 
 
 @pytest.fixture
-def array_negative_range() -> jax.Array:
-    """Create a jax.Array with 100 values from 0 to -100."""
-    signal: jax.Array = jax.numpy.arange(start=0, stop=-101, step=-1)
-    return signal
-
-
-@pytest.fixture
-def array_positive_and_negative_range() -> jax.Array:
-    """Create a jax.Array with 100 values from -50 to 50."""
-    signal: jax.Array = jax.numpy.arange(start=-50, stop=51)
-    return signal
+def large_numbers_array() -> jax.Array:
+    """Array with very large finite values to check overflow handling."""
+    return jnp.array([1e18, 1e18, 1e18, 1e18])
