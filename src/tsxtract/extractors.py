@@ -28,20 +28,43 @@ def absolute_energy(time_series: jax.Array) -> jax.Array:
 
 @jax.jit
 def absolute_maximum(time_series: jax.Array) -> jax.Array:
-    """Calculate the absolute maximum of the time series.
+    r"""Calculate the absolute maximum value of a time series.
+
+    The absolute maximum is defined as:
+
+    .. math::
+        \\max(|x_i|) \\quad \text{for} \\quad i = 1, \\ldots, N
+
+    where \\(x_i\\) are the elements of the input time series.
 
     Parameters
     ----------
     time_series : jax.Array
-        Vector to calculate the absolute maximum of.
+        Input 1D array (time series) from which to compute the absolute maximum.
 
     Returns
     -------
-    jax.Array :
-        The absolute maximum of the vector.
+    jax.Array
+        Scalar array representing the maximum absolute value of the input.
+
+    Raises
+    ------
+    ValueError
+        If the input array is empty.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> ts = jnp.array([-3.0, 2.0, -5.0])
+    >>> absolute_maximum(ts)
+    5.0
 
     """
-    return jnp.max(jnp.absolute(time_series))
+    if time_series.size == 0:
+        msg = "Input array is empty; cannot compute maximum."
+        raise ValueError(msg)
+
+    return jnp.max(jnp.abs(time_series))
 
 
 @jax.jit
