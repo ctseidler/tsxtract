@@ -7,7 +7,7 @@ import tsxtract.extractors as tsx
 
 
 @pytest.mark.parametrize(
-    "arr, expected",
+    ("arr", "expected"),
     [
         ("ones_array", 1),
         ("zeros_array", 0),
@@ -51,7 +51,7 @@ def test_inf_propagation(arr_fixture, request) -> None:
 
 
 @pytest.mark.parametrize(
-    "arr_fixture, expected",
+    ("arr_fixture", "expected"),
     [
         ("array_50_50", 0.5),
         ("array_20_80", 0.8),

@@ -7,7 +7,7 @@ import tsxtract.extractors as tsx
 
 
 @pytest.mark.parametrize(
-    "array, expected",
+    ("array", "expected"),
     [
         (jnp.ones(5), 5),  # all ones
         (jnp.zeros(5), 0),  # all zeros
@@ -63,7 +63,7 @@ def test_large_numbers():
 
 
 @pytest.mark.parametrize(
-    "array, expected",
+    ("array", "expected"),
     [
         (jnp.arange(0, 101), 338350),  # 0..100
         (jnp.arange(-100, 1), 338350),  # -100..0

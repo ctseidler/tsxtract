@@ -6,84 +6,77 @@ import pytest
 import tsxtract.extractors as tsx
 
 
-def test_ones(ones_array) -> None:
-    """tsx.absolute_maximum should return 1 for a time series with 100 ones."""
-    expected_output: int = 1
-    assert tsx.absolute_maximum(ones_array) == expected_output
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.ones(5), 1),  # all ones
+        (jnp.zeros(5), 0),  # all zeros
+        (-jnp.ones(5), 1),  # all negative ones
+        (jnp.array([1, -1, 1, -1]), 1),  # alternating ±1
+        (jnp.array([0, 1, 0, 1]), 1),  # half zeros, half ones
+    ],
+)
+def test_constant_and_mixed_arrays(array, expected):
+    """absolute_maximum returns the max absolute value for constant and mixed arrays."""
+    assert tsx.absolute_maximum(array) == expected
 
 
-def test_zeros(zeros_array) -> None:
-    """tsx.absolute_maximum should return 0 for a time series with 100 zeros."""
-    expected_output: int = 0
-    assert tsx.absolute_maximum(zeros_array) == expected_output
+def test_single_point(single_point):
+    """absolute_maximum of a single element is the absolute value of that element."""
+    expected = jnp.abs(single_point)
+    assert tsx.absolute_maximum(single_point) == expected
 
 
-def test_negatives(negatives_array) -> None:
-    """tsx.absolute_maximum should return 1 for a time series with 100 -1 values."""
-    expected_output: int = 1
-    assert tsx.absolute_maximum(negatives_array) == expected_output
-
-
-def test_single_point(single_point) -> None:
-    """tsx.absolute_maximum should return the value for a single datapoint."""
-    expected_output: float = single_point
-    assert tsx.absolute_maximum(single_point) == expected_output
-
-
-def test_empty(empty_array) -> None:
-    """tsx.absolute_maximum should raise a ValueError for an empty sequence."""
-    with pytest.raises(
-        ValueError,
-        match="zero-size array to reduction operation max which has no identity",
-    ):
+def test_empty_array(empty_array):
+    """absolute_maximum should raise ValueError for empty input."""
+    with pytest.raises(ValueError, match="Input array is empty"):
         tsx.absolute_maximum(empty_array)
 
 
-def test_nan_values(nan_array) -> None:
-    """tsx.absolute_maximum should return nan for an array with 100 nan values."""
-    assert jnp.isnan(tsx.absolute_maximum(nan_array))
+@pytest.mark.parametrize(
+    "array",
+    [
+        jnp.full(5, jnp.nan),  # all NaNs
+        jnp.array([1, 2, jnp.nan, 3], dtype=jnp.float32),  # mixed NaN
+    ],
+)
+def test_nan_handling(array):
+    """absolute_maximum returns NaN if any NaN is present."""
+    result = tsx.absolute_maximum(array)
+    assert jnp.isnan(result)
 
 
-def test_array_with_nan_values(array_with_nan) -> None:
-    """tsx.absolute_maximum should return nan for an array with 20 nan values."""
-    assert jnp.isnan(tsx.absolute_maximum(array_with_nan))
+@pytest.mark.parametrize(
+    "array",
+    [
+        jnp.full(5, jnp.inf),  # all Inf
+        jnp.array([1, 2, jnp.inf, 3], dtype=jnp.float32),  # mixed Inf
+    ],
+)
+def test_inf_handling(array):
+    """absolute_maximum returns Inf if any Inf is present."""
+    result = tsx.absolute_maximum(array)
+    assert jnp.isinf(result)
 
 
-def test_inf_values(inf_array) -> None:
-    """tsx.absolute_maximum should return inf for an array with 100 inf values."""
-    assert jnp.isinf(tsx.absolute_maximum(inf_array))
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.array([0, 0, 1, 1]), 1),  # half zeros, half ones
+        (jnp.array([0, 1, 1, 1, 1]), 1),  # 20% zeros, 80% ones
+        (jnp.arange(0, 101), 100),  # 0..100
+        (jnp.arange(-100, 1), 100),  # -100..0
+        (jnp.arange(-50, 51), 50),  # -50..50
+    ],
+)
+def test_various_arrays(array, expected):
+    """absolute_maximum should return correct max abs value for various inputs."""
+    assert tsx.absolute_maximum(array) == expected
 
 
-def test_array_with_inf_values(array_with_inf) -> None:
-    """tsx.absolute_maximum should return a numeric for an array with 20 inf values."""
-    assert jnp.isreal(tsx.absolute_maximum(array_with_inf))
-
-
-def test_50_50(array_50_50) -> None:
-    """tsx.absolute_maximum should return 1 for a time series with 50 zeros and 50 ones."""
-    expected_output: int = 1
-    assert tsx.absolute_maximum(array_50_50) == expected_output
-
-
-def test_20_80(array_20_80) -> None:
-    """tsx.absolute_maximum should return 80 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 1
-    assert tsx.absolute_maximum(array_20_80) == expected_output
-
-
-def test_positive_range(array_positive_range) -> None:
-    """tsx.absolute_maximum should return 100 for a range from 0 to 100."""
-    expected_output: int = 100
-    assert tsx.absolute_maximum(array_positive_range) == expected_output
-
-
-def test_negative_range(array_negative_range) -> None:
-    """tsx.absolute_maximum should return 100 for a range from -100 to 0."""
-    expected_output: int = 100
-    assert tsx.absolute_maximum(array_negative_range) == expected_output
-
-
-def test_positive_and_negative_range(array_positive_and_negative_range) -> None:
-    """tsx.absolute_maximum should return 50 for a range from -50 to 50."""
-    expected_output: int = 50
-    assert tsx.absolute_maximum(array_positive_and_negative_range) == expected_output
+def test_large_numbers():
+    """absolute_maximum should handle large finite values correctly without overflow."""
+    arr = jnp.array([1e18, -1e18, 1e18, -1e18])
+    result = tsx.absolute_maximum(arr)
+    assert jnp.isfinite(result)
+    assert result == 1e18

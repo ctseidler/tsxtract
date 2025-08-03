@@ -7,11 +7,6 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-# @pytest.fixture
-# def normal_array() -> jax.Array:
-#     """Random array with 5 normal-distributed values."""
-#     return jax.random.normal(jax.random.key(0), shape=(5,))
-
 
 @pytest.fixture
 def ones_array() -> jax.Array:
@@ -77,24 +72,6 @@ def array_50_50() -> jax.Array:
 def array_20_80() -> jax.Array:
     """20% zeros, 80% ones."""
     return jnp.array([0, 1, 1, 1, 1])
-
-
-# @pytest.fixture
-# def array_positive_range() -> jax.Array:
-#     """Positive integer range."""
-#     return jnp.arange(5)  # 0..4
-
-
-# @pytest.fixture
-# def array_negative_range() -> jax.Array:
-#     """Negative integer range."""
-#     return jnp.arange(0, -5, -1)  # 0..-4
-
-
-# @pytest.fixture
-# def array_positive_and_negative_range() -> jax.Array:
-#     """Mixed negative and positive range."""
-#     return jnp.arange(-2, 3)  # -2..2
 
 
 @pytest.fixture
