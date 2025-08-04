@@ -31,7 +31,7 @@ def main() -> None:
     print(dataset.shape)
 
     cfg: ExtractionConfiguration = ExtractionConfiguration()
-    cfg.add_feature("count_above", [{"value": 2}])
+    cfg.add_feature("count_above", [{"threshold": 2}])
     cfg.add_feature(custom_sum_values, None)
     # cfg.remove_feature("count_above__value_2")
 
