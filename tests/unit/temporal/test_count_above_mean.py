@@ -1,88 +1,69 @@
 """Unit tests for tsxtract.extraction.count_above_mean."""
 
 import jax.numpy as jnp
+import pytest
 
 import tsxtract.extractors as tsx
 
 
-def test_ones(ones_array) -> None:
-    """tsx.count_above_mean should return 0 for a time series with 100 ones."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(ones_array) == expected_output
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.ones(5), 0),
+        (jnp.zeros(5), 0),
+        (-jnp.ones(5), 0),
+        (jnp.array([0, 1, 2]), 1),
+    ],
+)
+def test_basic_cases(array, expected):
+    """Basic numeric arrays."""
+    assert tsx.count_above_mean(array) == expected
 
 
-def test_zeros(zeros_array) -> None:
-    """tsx.count_above_mean should return 0 for a time series with 100 zeros."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(zeros_array) == expected_output
+def test_single_point(single_point):
+    """Single value array should return 0."""
+    assert tsx.count_above_mean(single_point) == 0
 
 
-def test_negatives(negatives_array) -> None:
-    """tsx.count_above_mean should return 0 for a time series with 100 -1 values."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(negatives_array) == expected_output
+def test_empty(empty_array):
+    """Empty array returns 0."""
+    assert tsx.count_above_mean(empty_array) == 0
 
 
-def test_single_point(single_point) -> None:
-    """tsx.count_above_mean should return 0 for a single datapoint."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(single_point) == expected_output
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.full(5, jnp.nan), 0),  # all NaN
+        (jnp.array([1, jnp.nan, 2, 3]), 1),  # ignores NaNs in comparison
+    ],
+)
+def test_nan_handling(array, expected):
+    """NaN values should be handled."""
+    assert tsx.count_above_mean(array) == expected
 
 
-def test_empty(empty_array) -> None:
-    """tsx.count_above_mean should return 0 for an empty sequence."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(empty_array) == expected_output
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.full(5, jnp.inf), 0),
+        (jnp.array([1, jnp.inf, -3]), 0),  # only inf above finite mean, but inf does not count
+    ],
+)
+def test_inf_handling(array, expected):
+    """Inf values should be handled."""
+    assert tsx.count_above_mean(array) == expected
 
 
-def test_nan_values(nan_array) -> None:
-    """tsx.count_above_mean should return 0 for an array with 100 nan values."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(nan_array) == expected_output
-
-
-def test_array_with_nan_values(array_with_nan) -> None:
-    """tsx.count_above_mean should return 0 for an array with 20 nan values."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(array_with_nan) == expected_output
-
-
-def test_inf_values(inf_array) -> None:
-    """tsx.count_above_mean should return 0 for an array with 100 inf values."""
-    expected_output: int = 0
-    assert tsx.count_above_mean(inf_array) == expected_output
-
-
-def test_array_with_inf_values(array_with_inf) -> None:
-    """tsx.count_above_mean should return a numeric for an array with 20 inf values."""
-    assert jnp.isreal(tsx.count_above_mean(array_with_inf))
-
-
-def test_50_50(array_50_50) -> None:
-    """tsx.count_above_mean should return 50 for a time series with 50 zeros and 50 ones."""
-    expected_output: int = 50
-    assert tsx.count_above_mean(array_50_50) == expected_output
-
-
-def test_20_80(array_20_80) -> None:
-    """tsx.count_above_mean should return 80 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 80
-    assert tsx.count_above_mean(array_20_80) == expected_output
-
-
-def test_positive_range(array_positive_range) -> None:
-    """tsx.count_above_mean should return 50 for a range from 0 to 100."""
-    expected_output: int = 50
-    assert tsx.count_above_mean(array_positive_range) == expected_output
-
-
-def test_negative_range(array_negative_range) -> None:
-    """tsx.count_above_mean should return 50 for a range from -100 to 0."""
-    expected_output: int = 50
-    assert tsx.count_above_mean(array_negative_range) == expected_output
-
-
-def test_positive_and_negative_range(array_positive_and_negative_range) -> None:
-    """tsx.count_above_mean should return 50 for a range from -50 to 50."""
-    expected_output: int = 50
-    assert tsx.count_above_mean(array_positive_and_negative_range) == expected_output
+@pytest.mark.parametrize(
+    ("array", "expected"),
+    [
+        (jnp.array([0] * 50 + [1] * 50), 50),
+        (jnp.array([0] * 20 + [1] * 80), 80),
+        (jnp.arange(0, 101), 50),
+        (jnp.arange(-100, 1), 50),
+        (jnp.arange(-50, 51), 50),
+    ],
+)
+def test_varied_patterns(array, expected):
+    """Varied patterns should pose no issue."""
+    assert tsx.count_above_mean(array) == expected

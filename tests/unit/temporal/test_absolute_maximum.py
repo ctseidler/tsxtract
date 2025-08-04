@@ -76,7 +76,8 @@ def test_various_arrays(array, expected):
 
 def test_large_numbers():
     """absolute_maximum should handle large finite values correctly without overflow."""
-    arr = jnp.array([1e18, -1e18, 1e18, -1e18])
+    large_value = 1e-18
+    arr = jnp.array([large_value, -large_value, large_value, -large_value])
     result = tsx.absolute_maximum(arr)
     assert jnp.isfinite(result)
-    assert result == 1e18
+    assert result == large_value

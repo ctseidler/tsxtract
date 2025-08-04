@@ -71,6 +71,7 @@ Then, fork the repository and create a Pull-Request, once your feature is implem
 - [ ] Add further unit tests to reach coverage of 100%
 - [ ] Add usage example
 - [ ] Add additional feature extractors
+- [ ] Add frequency domain features
 - [x] Add support for custom features
 - [ ] Add custom error messages
 - [ ] Enhance feature extraction docstrings

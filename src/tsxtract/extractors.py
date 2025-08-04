@@ -69,38 +69,73 @@ def absolute_maximum(time_series: jax.Array) -> jax.Array:
 
 @jax.jit
 def absolute_sum_of_changes(time_series: jax.Array) -> jax.Array:
-    """Calculate the absolute sum of changes of the values.
+    r"""Calculate the absolute sum of changes in a time series.
+
+    The absolute sum of changes is defined as:
+
+    .. math::
+        \sum_{i=1}^{N-1} \left| x_{i+1} - x_i \right|
+
+    where \(x_i\) are the elements of the input time series.
 
     Parameters
     ----------
-    time_series :
-        The vector to calculate the absolute sum of changes of.
+    time_series : jax.Array
+        1D array representing the time series.
 
     Returns
     -------
-    jax.Array :
-        Absolute sum of changes of the values.
+    jax.Array
+        Scalar representing the sum of absolute differences between consecutive elements.
+        Returns ``0`` if the input contains fewer than 2 elements.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> ts = jnp.array([1.0, 2.5, 0.5])
+    >>> absolute_sum_of_changes(ts)
+    4.0
 
     """
+    if time_series.size < 2:
+        return jnp.array(0.0)
+
     return jnp.sum(jnp.abs(jnp.diff(time_series)))
 
 
 @jax.jit
 def absolute_sum_values(time_series: jax.Array) -> jax.Array:
-    """Calculate the sum of absolute values of the time series.
+    r"""Calculate the sum of absolute values of a time series.
+
+    The sum of absolute values is defined as:
+
+    .. math::
+        \sum_{i=1}^{N} |x_i|
+
+    where \(x_i\) are the elements of the input time series.
 
     Parameters
     ----------
     time_series : jax.Array
-        Vector to calculate the sum of absolute values of.
+        1D array representing the time series.
 
     Returns
     -------
-    jax.Array :
-        The sum of absolute values of the vector.
+    jax.Array
+        Scalar representing the sum of absolute values.
+        Returns ``0`` for an empty array.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> ts = jnp.array([1.0, -2.0, 3.0])
+    >>> absolute_sum_values(ts)
+    6.0
 
     """
-    return jnp.sum(jnp.absolute(time_series))
+    if time_series.size == 0:
+        return jnp.array(0.0)
+    return jnp.sum(jnp.abs(time_series))
 
 
 @partial(jax.jit, static_argnames=["lag"])
@@ -152,40 +187,90 @@ def c3(time_series: jax.Array, lag: int) -> jax.Array:
 
 @jax.jit
 def count_above(time_series: jax.Array, value: float) -> jax.Array:
-    """Calculate the percentage of values in the time series that are above value.
+    r"""Fraction of values in the time series that are greater or equal than the threshold.
+
+    The fraction is defined as:
+
+    .. math::
+        \\frac{\\sum_{i=1}^{N} [x_i \\ge t]}{N}
+
+    where :math:`t` is the threshold.
 
     Parameters
     ----------
     time_series : jax.Array
-        The vector to calculate the percentage of values above value.
+        1D array representing the time series.
     value : float
-        The threshold used.
+        The threshold value.
 
     Returns
     -------
-    jax.Array :
-        Percentage of values in the time series that are above value.
+    jax.Array
+        Fraction of values greater than or equal to ``value``.
+        Returns ``nan`` for an empty array.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> ts = jnp.array([1, 2, 3])
+    >>> count_above(ts, 2)
+    0.6666667
 
     """
-    return jnp.sum(jnp.greater_equal(time_series, value)) / len(time_series)
+    size = time_series.size
+    if size == 0:
+        return jnp.array(jnp.nan)
+    return jnp.sum(time_series >= value) / size
 
 
 @jax.jit
 def count_above_mean(time_series: jax.Array) -> jax.Array:
-    """Calculate the number of values above the mean.
+    r"""Count the number of values in the time series that are strictly greater than the mean.
+
+    The count is defined as:
+
+    .. math::
+        \\sum_{i=1}^{N} [x_i > \\bar{x}]
+
+    where :math:`\\bar{x}` is the mean of the array.
+
+    Notes
+    -----
+    - NaNs are treated as not above the mean.
+    - If the array is empty, returns ``0``.
+    - If the mean is NaN (e.g., all values are NaN), returns ``0``.
+    - ``Inf`` values are treated as NaNs.
+    - NaNs are ignored in the mean calculation.
 
     Parameters
     ----------
-    time_series :
-        The vector to calculate the number of features above the mean.
+    time_series : jax.Array
+        1D array representing the time series.
 
     Returns
     -------
-    jax.Array :
-        Number of features above the mean.
+    jax.Array
+        Number of values greater than the mean.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> ts = jnp.array([0, 1, 2])
+    >>> count_above_mean(ts)
+    Array(1, dtype=int32)
 
     """
-    return jnp.sum(time_series > jnp.mean(time_series))
+    if time_series.size == 0:
+        return jnp.array(0, dtype=jnp.int32)
+
+    mean_val = jnp.nanmean(time_series)
+
+    return jax.lax.cond(
+        jnp.isnan(mean_val),
+        lambda _: jnp.array(0, dtype=jnp.int32),  # Mean is NaN --> no value above mean
+        lambda _: jnp.sum(time_series > mean_val),
+        operand=None,
+    )
 
 
 @jax.jit
