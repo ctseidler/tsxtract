@@ -23,16 +23,16 @@ ESTIMATE_COMPLEXITY = False
 def main() -> None:
     """Run the script."""
     dataset = generate_random_time_series_dataset(
-        n_samples=10,
+        n_samples=50,
         n_channels=2,
-        sampling_rate=10,
-        time_series_length_in_seconds=1,
+        sampling_rate=50,
+        time_series_length_in_seconds=5.0,
     )
     print(dataset.shape)
 
     cfg: ExtractionConfiguration = ExtractionConfiguration()
-    cfg.add_feature("count_above", [{"threshold": 2}])
-    cfg.add_feature(custom_sum_values, None)
+    # cfg.add_feature("count_above", [{"threshold": 2}])
+    # cfg.add_feature(custom_sum_values, None)
     # cfg.remove_feature("count_above__value_2")
 
     settings = cfg.to_dict()
@@ -42,6 +42,7 @@ def main() -> None:
     cfg = ExtractionConfiguration.from_json("extraction_settings.json")
 
     features: dict = extract_features(dataset, cfg)
+    quit()
     print(features.keys())
     print("Number of implemented features:", len(features.keys()))
 
