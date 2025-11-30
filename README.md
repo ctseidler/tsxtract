@@ -35,15 +35,13 @@ Check out `main.py` for a complete usage example.
 
 Step 1: Install uv: ```pip install uv```
 
-Step 2: Clone this repository: ```git clone https://github.com/ctseidler/tsxtract.git .```
+Step 2: Create a new virtual environment: ```uv venv --python 3.12```
 
-Step 3: Create a new virtual environment: ```uv venv --python 3.12```
+Step 3: Activate the virtual environment: ```source .venv/bin/activate```
 
-Step 4: Activate the virtual environment: ```source .venv/bin/activate```
+Step 4: Install tsxtract from PyPI: ```uv pip install tsxtract```
 
-Step 5: Install the package as editable from source: ```uv pip install -e .```
-
-Step 6: Test your setup by executing the `main.py` script: ```uv run main.py```
+Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 
 ## Overview of Extracted Features
 
