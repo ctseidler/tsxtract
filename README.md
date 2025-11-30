@@ -6,6 +6,8 @@ Hardware-accelerated time series feature extraction using JAX.
 
 Please star the repository if you like tsxtract.
 
+You can find the documentation [here](https://ctseidler.github.io/tsxtract/index.html)
+
 ## Why tsxtract?
 
 - Fast: All extraction operations are vectorized
