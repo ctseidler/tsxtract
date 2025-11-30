@@ -1,44 +1,54 @@
-"""Module containing feature extraction functions.
+"""Feature extraction functions."""
 
-Docstring example: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_numpy.html
-
-Tsfresh feature list: https://tsfresh.readthedocs.io/en/latest/_modules/tsfresh/feature_extraction/feature_calculators.html
-"""
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-
-from functools import partial
+from collections.abc import Callable
 
 import jax
-
-from tsxtract.configuration import ExtractionConfiguration
-from tsxtract.utils import measure_runtime
+import jax.numpy as jnp
 
 
-@measure_runtime()
-@partial(jax.jit, static_argnames=["config"])
-def extract_features(dataset: jax.Array, config: ExtractionConfiguration) -> dict[str, jax.Array]:
-    """Extract a bunch of features.
+@jax.jit
+def extract_features(dataset: jax.Array) -> dict[str, jax.Array]:
+    """Extract features using tsxtract.
 
-    Expected input: Dataset of shape (samples, channels, time_series)
+    Parameters
+    ----------
+    dataset : jax.Array
+        Dataset to extract features from. Must be an array of shape
+        (samples, channels, length).
+
+    Returns
+    -------
+    dict[str, jax.Array] :
+        Dictionary with feature names as key and extracted features as values.
 
     """
     extracted_features: dict[str, jax.Array] = {}
-    feature_extractors: dict[str, Callable] = config.map_settings_to_feature_extractors()
 
-    for name, extractor in feature_extractors.items():
-        extracted_features[name] = flat_vmap(extractor, dataset)
+    extracted_features["maximum"] = _flat_vmap(maximum, dataset)
+    extracted_features["mean"] = _flat_vmap(mean, dataset)
+    extracted_features["minimum"] = _flat_vmap(minimum, dataset)
 
     return extracted_features
 
 
-def flat_vmap(fn, x):
-    """Applying vmap on (samples, channels) simultaneously."""
-    s, c, t = x.shape
-    x_flat = x.reshape(s * c, t)
-    out = jax.vmap(fn)(x_flat)
-    return out.reshape(s, c, *out.shape[1:])
+def _flat_vmap(function: Callable, sample: jax.Array) -> jax.Array:
+    """Apply vmap on (samples, channels) simultaneously."""
+    samples, channels, length = sample.shape
+    sample_flat = sample.reshape(samples * channels, length)
+    result = jax.vmap(function)(sample_flat)
+    return result.reshape(samples, channels, *result.shape[1:])
+
+
+def maximum(signal: jax.Array) -> jax.Array:
+    """Get the maximal value in the signal."""
+    return jnp.max(signal)
+
+
+def mean(signal: jax.Array) -> jax.Array:
+    """Calculate the mean value of the signal."""
+    return jnp.mean(signal)
+
+
+def minimum(signal: jax.Array) -> jax.Array:
+    """Get the minimal value of the signal."""
+    return jnp.min(signal)

@@ -1,8 +1,31 @@
-# tsXtract
+# tsxtract
 
 Hardware-accelerated time series feature extraction using JAX.
 
-## Why tsXtract?
+**NOTE**: tsxtract is still under development. Please report any bugs by creating an issue.
+
+Please star the repository if you like tsxtract.
+
+## Why tsxtract?
+
+- Fast: All extraction operations are vectorized
+- Hardware-accelerated: Run on CPU, GPU or TPU
+- Easy-to-use: One function is all you need 
+
+## Example usage
+
+```{python}
+from tsxtract.extraction import extract_features
+
+# Dataset is a 3d-numpy or jax array with following dimensions:
+# (samples, channels, length)
+features = extract_features(dataset)
+
+print(type(features)) # dict
+print(features["mean"].shape) # jax.Array of size (samples, channels)
+```
+
+Check out `main.py` for a complete usage example.
 
 ## Installation
 
@@ -18,77 +41,60 @@ Step 4: Activate the virtual environment: ```source .venv/bin/activate```
 
 Step 5: Install the package as editable from source: ```uv pip install -e .```
 
-Step 6: Test your setup by executing the `test.py` script: ```uv run test.py```
-
-
-## Examples
+Step 6: Test your setup by executing the `main.py` script: ```uv run main.py```
 
 ## Overview of Extracted Features
 
-| Feature Name | Type | Computational Complexity |
-| ------------ | ---- | ---------- |
-| Length | Temporal | O(1) for time series length smaller 200.000, O(n) otherwise
-| Mean | Temporal  | O(1) for time series length smaller 200.000, O(n) otherwise
-| Median | Temporal | n/a
-| Maximum | Temporal | n/a
-| Minimum | Temporal | n/a
-| Standard Deviation | Temporal | n/a
-| Variance | Temporal | n/a
-| Sum of Values | Temporal | n/a
-| Absolute Sum of Values | Temporal | n/a
-| Absolute Maximum | Temporal | n/a
-| Absolute Energy | Temporal | n/a
-| Variance larger than Standard Deviation | Temporal | n/a
-| Value Range | Temporal | n/a
-| Count above Mean | Temporal | n/a
-| Count below Mean | Temporal | n/a
-| Root Mean Square | Temporal | n/a
-| Absolute Sum of Changes | Temporal | n/a
-| Range Count in interval | Temporal | n/a
-| Value Count of t | Temporal | n/a
-| Count above t | Temporal | n/a
-| Count below t | Temporal | n/a
+- Maximum
+- Mean
+- Minimum
 
 ## Contributing
 
-We are open to contributions. Please open an Issue first, so that we can discuss your feature.
+Contributions are welcome! Please open an issue, if you have any feature request. You can also implement it by forking the repository and creating a pull-request upon completion. Please make sure that your feature is covered by unittests (see test/). Current test coverage is 100%.
 
-Then, fork the repository and create a Pull-Request, once your feature is implemented.
+**Development setup**:
 
-**Key Steps**:
-
-- Setup a dev environment: Run `uv sync` to install dev dependencies.
+- Install the package locally as mentioned above.
+- Run `uv sync` to install dev dependencies.
 - Run the unit tests prior to a commit (pre-commit): `uv run coverage run -m pytest`
 - Check the coverage report to identify missing test coverage: `uv run coverage report -m`
 
 ## Roadmap
 
-- [x] Refactor `extract_features` function
-- [x] Set default values for feature extractors with parameters
-- [x] Add interface for easy configuration of feature extraction configuration
-- [x] Add support to set feature extraction config from dict
-- [x] Add JSON import and export for feature extraction configuration
-- [ ] Add further unit tests to reach coverage of 100%
-- [ ] Add usage example
-- [ ] Add additional feature extractors
-- [ ] Add frequency domain features
-- [x] Add support for custom features
-- [ ] Add custom error messages
-- [ ] Enhance feature extraction docstrings
-- [ ] Benchmark performance against Tsfresh & TSFEL
-- [ ] Enhance README
-- [ ] Add documentation using Sphinx
-- [ ] Estimate computational complexity per extracted feature
-- [ ] Add different pre-configured feature sets
-- [ ] Test GPU support
-- [ ] Launch version 1.0
-- [ ] Add package to PyPi
+Version 0.2:
+- [ ] Test CPU and GPU support
+- [ ] Add example notebook for CPU and GPU extraction
+
+Version 0.3:
+- [ ] Add additional features
+- [ ] Add features with customizable parameters
+- [ ] Add configuration options
+
+Version 0.4:
+- [ ] Add support to custom features
+- [ ] Allow configuration as dict
+- [ ] Allow configuration as json
+
+Version 0.5:
+- [ ] Add frequency-based features
+- [ ] Make package compatible for Python 3.10 and 3.11
+- [ ] Allow easy IO, e.g., by integrating polars
+
+Version 1.0:
+- [ ] Performance benchmark
+- [ ] Add project logo
 
 ## Authors
 
 Christian T. Seidler
 
 ## See also
+
+- [tsfresh](https://github.com/blue-yonder/tsfresh): Time Series Feature extraction based on scalable hypothesis test
+- [TSFEL](https://github.com/fraunhoferportugal/tsfel): Time Series Feature Extraction Library
+- [pycatch22](https://github.com/DynamicsAndNeuralSystems/pycatch22): CAnonical Time-series CHaracteristics in Python
+- [seglearn](https://github.com/dmbee/seglearn): An sklearn extension for machine learning time series or sequences
 
 ## License
 
