@@ -46,6 +46,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">tsxtract package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-tsxtract.extraction">tsxtract.extraction module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tsxtract.extraction._flat_vmap"><code class="docutils literal notranslate"><span class="pre">_flat_vmap()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tsxtract.extraction.extract_features"><code class="docutils literal notranslate"><span class="pre">extract_features()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tsxtract.extraction.maximum"><code class="docutils literal notranslate"><span class="pre">maximum()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#tsxtract.extraction.mean"><code class="docutils literal notranslate"><span class="pre">mean()</span></code></a></li>
@@ -93,6 +94,17 @@
 <section id="module-tsxtract.extraction">
 <span id="tsxtract-extraction-module"></span><h2>tsxtract.extraction module<a class="headerlink" href="#module-tsxtract.extraction" title="Link to this heading"></a></h2>
 <p>Feature extraction functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tsxtract.extraction._flat_vmap">
+<span class="sig-prename descclassname"><span class="pre">tsxtract.extraction.</span></span><span class="sig-name descname"><span class="pre">_flat_vmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tsxtract.extraction._flat_vmap" title="Link to this definition"></a></dt>
+<dd><p>Apply vmap on (samples, channels) simultaneously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Array</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="tsxtract.extraction.extract_features">
 <span class="sig-prename descclassname"><span class="pre">tsxtract.extraction.</span></span><span class="sig-name descname"><span class="pre">extract_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tsxtract.extraction.extract_features" title="Link to this definition"></a></dt>
