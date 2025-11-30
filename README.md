@@ -14,7 +14,7 @@ Please star the repository if you like tsxtract.
 
 ## Example usage
 
-```{python}
+```python
 from tsxtract.extraction import extract_features
 
 # Dataset is a 3d-numpy or jax array with following dimensions:
