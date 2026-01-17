@@ -49,6 +49,20 @@ Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 - Mean
 - Minimum
 
+## Extracting features on GPU / TPU
+
+To extract features on the GPU / TPU, first install jax with cuda: ```uv pip install -U "jax[cuda13]"```.
+Then, install tsxtract: ```uv pip install tsxtract```. The fastest device will automatically be
+selected for extraction.
+
+The default installation of tsxtract uses the cpu-only variant of jax.
+
+Notes:
+- Use ```jax.devices()``` to see which device is used by jax.
+- For large datasets, there might not be enough GPU memory available. In this case either run extraction on the CPU, or batch your data prior to extraction.
+- Feature extraction on GPU does not necessarily improve performance, as executing code on a GPU incurs a overhead for data copying.
+- Enabling GPU support of jax on windows is experimental.
+
 ## Contributing
 
 Contributions are welcome! Please open an issue, if you have any feature request. You can also implement it by forking the repository and creating a pull-request upon completion. Please make sure that your feature is covered by unittests (see test/). Current test coverage is 100%.
@@ -63,8 +77,8 @@ Contributions are welcome! Please open an issue, if you have any feature request
 ## Roadmap
 
 Version 0.2:
-- [ ] Test CPU and GPU support
-- [ ] Add example notebook for CPU and GPU extraction
+- [x] Test CPU and GPU support
+- [x] Add example notebook for CPU and GPU extraction
 
 Version 0.3:
 - [ ] Add additional features
