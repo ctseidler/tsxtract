@@ -1,10 +1,7 @@
-tsxtract package
+tsxtract
 ================
 
-Submodules
-----------
-
-tsxtract.extraction module
+tsxtract.extraction
 --------------------------
 
 .. automodule:: tsxtract.extraction
@@ -12,7 +9,7 @@ tsxtract.extraction module
    :show-inheritance:
    :undoc-members:
 
-tsxtract.utils module
+tsxtract.utils
 ---------------------
 
 .. automodule:: tsxtract.utils
@@ -20,10 +17,3 @@ tsxtract.utils module
    :show-inheritance:
    :undoc-members:
 
-Module contents
----------------
-
-.. automodule:: tsxtract
-   :members:
-   :show-inheritance:
-   :undoc-members:
