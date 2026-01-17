@@ -45,9 +45,18 @@ Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 
 ## Overview of Extracted Features
 
+- Absolute maximum
+- Length
 - Maximum
 - Mean
+- Median
 - Minimum
+- Peak-to-peak distance
+- Standard deviation
+- Sum values
+- Variance
+- Variance larger than standard deviation
+- Zero-crossing rate
 
 ## Extracting features on GPU / TPU
 
