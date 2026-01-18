@@ -45,7 +45,19 @@ Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 
 ## Overview of Extracted Features
 
+- Absolute energy
 - Absolute maximum
+- Absolute sum of changes
+- Absolute sum of values
+- Count above mean
+- Count below mean
+- Distance
+- First location of maximum
+- First location of minimum
+- Has duplicate
+- Has duplicate max
+- Has duplicate min
+- Interquartile range
 - Length
 - Maximum
 - Mean
