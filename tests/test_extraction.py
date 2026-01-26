@@ -11,7 +11,7 @@ from tsxtract.utils import generate_random_time_series_dataset
 def test_extract_features():
     """Test feature extraction."""
     # Standard case: Array of shape (samples, channels, length)
-    implemented_features = 24
+    implemented_features = 26
     dataset = generate_random_time_series_dataset(
         n_samples=10,
         n_channels=2,
@@ -235,17 +235,17 @@ def test_distance_edge_cases():
         (jnp.ones(5), 0),
         (jnp.zeros(5), 0),
         (-jnp.ones(5), 0),
-        (jnp.array([-1, 0, 1, 0, -1]), 0.5),
-        (jnp.array([-1, 0, 1, 2, 3]), 1),
+        (jnp.array([-1, 0, 1, 0, -1]), 0.4),
+        (jnp.array([-1, 0, 1, 2, 3]), 0.8),
         (jnp.array([1e18, 1e18]), 0),
         (jnp.array([-1e18, -1e18]), 0),
         (jnp.array([1]), 0),
         (jnp.array([jnp.nan, jnp.nan]), 0),
         (jnp.array([jnp.inf, -jnp.inf]), 0),
-        (jnp.array([0, jnp.nan, 1]), 0.5),
-        (jnp.array([0, jnp.inf, 1]), 0.5),
-        (jnp.array([0, -jnp.inf, 1]), 1),
-        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.33333334),
+        (jnp.array([0, jnp.nan, 1]), 0.33333334),
+        (jnp.array([0, jnp.inf, 1]), 0.33333334),
+        (jnp.array([0, -jnp.inf, 1]), 0.6666667),
+        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.25),
     ],
 )
 def test_first_location_of_maximum(array, expected):
@@ -270,11 +270,11 @@ def test_first_location_of_maximum_edge_cases():
         (jnp.array([-1e18, -1e18]), 0),
         (jnp.array([1]), 0),
         (jnp.array([jnp.nan, jnp.nan]), 0),
-        (jnp.array([jnp.inf, -jnp.inf]), 1),
-        (jnp.array([0, jnp.nan, 1]), 0.5),
+        (jnp.array([jnp.inf, -jnp.inf]), 0.5),
+        (jnp.array([0, jnp.nan, 1]), 0.33333334),
         (jnp.array([0, jnp.inf, 1]), 0),
-        (jnp.array([0, -jnp.inf, 1]), 0.5),
-        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.33333334),
+        (jnp.array([0, -jnp.inf, 1]), 0.33333334),
+        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.25),
     ],
 )
 def test_first_location_of_minimum(array, expected):
@@ -389,6 +389,64 @@ def test_interquartile_range_edge_cases():
     assert jnp.isinf(tsx.interquartile_range(signal=jnp.array([0, jnp.inf, 1])))
     assert jnp.isinf(tsx.interquartile_range(signal=jnp.array([0, -jnp.inf, 1])))
     assert jnp.isnan(tsx.interquartile_range(signal=jnp.array([0, jnp.nan, jnp.inf, 1])))
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "expected"),
+    argvalues=[
+        (jnp.ones(5), 1),
+        (jnp.zeros(5), 1),
+        (-jnp.ones(5), 1),
+        (jnp.array([-1, 0, 1, 0, -1]), 0.6),
+        (jnp.array([-1, 0, 1, 2, 3]), 1),
+        (jnp.array([1e18, 1e18]), 1),
+        (jnp.array([-1e18, -1e18]), 1),
+        (jnp.array([1]), 1),
+        (jnp.array([jnp.nan, jnp.nan]), 1),
+        (jnp.array([jnp.inf, -jnp.inf]), 0.5),
+        (jnp.array([0, jnp.nan, 1]), 0.6666666),
+        (jnp.array([0, jnp.inf, 1]), 0.6666666),
+        (jnp.array([0, -jnp.inf, 1]), 1),
+        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.5),
+    ],
+)
+def test_last_location_of_maximum(array, expected):
+    """Test extraction of last_location_of_maximum."""
+    assert tsx.last_location_of_maximum(signal=array) == expected
+
+
+def test_last_location_of_maximum_edge_cases():
+    """Test extraction of last_location_of_maximum on edge cases."""
+    assert jnp.isnan(tsx.last_location_of_maximum(signal=jnp.array([])))
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "expected"),
+    argvalues=[
+        (jnp.ones(5), 1),
+        (jnp.zeros(5), 1),
+        (-jnp.ones(5), 1),
+        (jnp.array([-1, 0, 1, 0, -1]), 1),
+        (jnp.array([-1, 0, 1, 2, 3]), 0.19999999),
+        (jnp.array([1e18, 1e18]), 1),
+        (jnp.array([-1e18, -1e18]), 1),
+        (jnp.array([1]), 1),
+        (jnp.array([jnp.nan, jnp.nan]), 1),
+        (jnp.array([jnp.inf, -jnp.inf]), 1),
+        (jnp.array([0, jnp.nan, 1]), 0.6666666),
+        (jnp.array([0, jnp.inf, 1]), 0.3333333),
+        (jnp.array([0, -jnp.inf, 1]), 0.6666666),
+        (jnp.array([0, jnp.nan, jnp.inf, 1]), 0.5),
+    ],
+)
+def test_last_location_of_minimum(array, expected):
+    """Test extraction of last_location_of_minimum."""
+    assert tsx.last_location_of_minimum(signal=array) == expected
+
+
+def test_last_location_of_minimum_edge_cases():
+    """Test extraction of last_location_of_minimum on edge cases."""
+    assert jnp.isnan(tsx.last_location_of_minimum(signal=jnp.array([])))
 
 
 @pytest.mark.parametrize(

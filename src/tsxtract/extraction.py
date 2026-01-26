@@ -51,6 +51,8 @@ def extract_features(dataset: jax.Array) -> dict[str, jax.Array]:
     extracted_features["has_duplicate_max"] = _flat_vmap(has_duplicate_max, dataset)
     extracted_features["has_duplicate_min"] = _flat_vmap(has_duplicate_min, dataset)
     extracted_features["interquartile_range"] = _flat_vmap(interquartile_range, dataset)
+    extracted_features["last_location_of_maximum"] = _flat_vmap(last_location_of_maximum, dataset)
+    extracted_features["last_location_of_minimum"] = _flat_vmap(last_location_of_minimum, dataset)
 
     return extracted_features
 
@@ -122,12 +124,7 @@ def first_location_of_maximum(signal: jax.Array) -> jax.Array:
     size = signal.size
     if size == 0:
         return jnp.array(jnp.nan)
-    return jax.lax.cond(
-        size > 1,
-        lambda _: jnp.argmax(signal) / (size - 1),
-        lambda _: jnp.array(0.0),  # Scalar array --> value is always maximum
-        operand=None,
-    )
+    return jnp.argmax(signal) / size
 
 
 def first_location_of_minimum(signal: jax.Array) -> jax.Array:
@@ -135,12 +132,7 @@ def first_location_of_minimum(signal: jax.Array) -> jax.Array:
     size = signal.size
     if size == 0:
         return jnp.array(jnp.nan)
-    return jax.lax.cond(
-        size > 1,
-        lambda _: jnp.argmin(signal) / (size - 1),
-        lambda _: jnp.array(0.0),  # Scalar array --> value is always minimum
-        operand=None,
-    )
+    return jnp.argmin(signal) / size
 
 
 def has_duplicate(signal: jax.Array) -> jax.Array:
@@ -172,6 +164,24 @@ def interquartile_range(signal: jax.Array) -> jax.Array:
         return jnp.array(jnp.nan)
 
     return jnp.percentile(signal, 75) - jnp.percentile(signal, 25)
+
+
+def last_location_of_maximum(signal: jax.Array) -> jax.Array:
+    """Get the relative index of the last occurrence of the maximum value in the signal."""
+    size = signal.size
+    if size == 0:
+        return jnp.array(jnp.nan)
+
+    return jnp.array(1.0 - (jnp.argmax(signal[::-1]) / size))
+
+
+def last_location_of_minimum(signal: jax.Array) -> jax.Array:
+    """Get the relative index of the last occurrence of the minimum value in the signal."""
+    size = signal.size
+    if size == 0:
+        return jnp.array(jnp.nan)
+
+    return jnp.array(1.0 - (jnp.argmin(signal[::-1]) / size))
 
 
 def length(signal: jax.Array) -> int:

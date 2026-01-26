@@ -58,6 +58,8 @@ Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 - Has duplicate max
 - Has duplicate min
 - Interquartile range
+- Last location of maximum
+- Last location of minimum
 - Length
 - Maximum
 - Mean
@@ -105,6 +107,7 @@ Version 0.3:
 - [ ] Add additional features
 - [ ] Add features with customizable parameters
 - [ ] Add configuration options
+- [ ] Replace argmin / argmax with nanargmin / nanargmax?
 
 Version 0.4:
 - [ ] Add support to custom features
