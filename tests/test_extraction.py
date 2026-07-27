@@ -11,7 +11,7 @@ from tsxtract.utils import generate_random_time_series_dataset
 def test_extract_features():
     """Test feature extraction."""
     # Standard case: Array of shape (samples, channels, length)
-    implemented_features = 10
+    implemented_features = 14
     dataset = generate_random_time_series_dataset(
         n_samples=10,
         n_channels=2,
@@ -303,3 +303,120 @@ def test_percentile_edge_cases():
     assert tsx.percentile(signal=jnp.array([0, jnp.inf, 1]), q=50) == 1.0
     assert tsx.percentile(signal=jnp.array([0, -jnp.inf, 1]), q=50) == 0.0
     assert jnp.isnan(tsx.percentile(signal=jnp.array([0, jnp.nan, jnp.inf, 1]), q=50))
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "expected"),
+    argvalues=[
+        (jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0]), 0.0),
+        (jnp.array([0.0, 1.0, 2.0, 3.0]), 0.0),
+        (jnp.array([1.0, 2.0, 3.0, 10.0]), 1.0182), # right-skewed; scipy.stats.skew    
+        (jnp.array([1.0, 8.0, 9.0, 10.0]), -1.0182), # left-skewed; scipy.stats.skew
+    ],
+)
+def test_skewness(array, expected):
+    """Test skewness against scipy.stats.skew (bias=True) references."""
+    assert tsx.skewness(signal=array) == pytest.approx(expected, rel=1e-3, abs=1e-5)
+
+
+def test_skewness_edge_cases():
+    """Edge cases: moment-based features propagate NaN/inf to NaN."""
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([])))
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([3.0, 3.0, 3.0])))  
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([1e18, 1e18])))    
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([jnp.nan, jnp.nan])))
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([jnp.inf, jnp.inf])))  
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([jnp.inf, -jnp.inf])))    
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([0.0, jnp.nan, 1.0])))
+    assert jnp.isnan(tsx.skewness(signal=jnp.array([0.0, jnp.inf, 1.0])))
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "expected"),
+    argvalues=[
+        (jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0]), -1.3),
+        (jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]), -1.3),
+        (jnp.array([0.0, 1.0, 2.0, 3.0]), -1.36),
+        (jnp.array([0.0, 0.0, 0.0, 0.0, 10.0]), 0.25),
+        (jnp.array([1.0, 2.0, 3.0, 10.0]), -0.7696),
+    ],
+)
+def test_kurtosis(array, expected):
+    """Test excess kurtosis against scipy.stats.kurtosis (fisher=True) references."""
+    assert tsx.kurtosis(signal=array) == pytest.approx(expected, rel=1e-3, abs=1e-5)
+
+
+def test_kurtosis_edge_cases():
+    """Edge cases: same NaN-propagation contract as skewness."""
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([3.0, 3.0, 3.0])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([1e18, 1e18])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([jnp.nan, jnp.nan])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([jnp.inf, jnp.inf])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([jnp.inf, -jnp.inf])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([0.0, jnp.nan, 1.0])))
+    assert jnp.isnan(tsx.kurtosis(signal=jnp.array([0.0, jnp.inf, 1.0])))
+
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "expected"),
+    argvalues=[
+        (jnp.array([1.0, -1.0, 1.0, -1.0]), 1.0),
+        (jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]), 0.0),
+        (jnp.array([-1.0, -2.0, -3.0]), 0.0),
+        (jnp.array([2.0, 1.0, -1.0, -3.0, 4.0]), 0.5),
+        (jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0]), 0.5),
+        (jnp.array([0.0, 1.0, 2.0, 3.0]), 1.0 / 3.0),
+    ],
+)
+def test_zero_crossing_rate(array, expected):
+    """Test ZCR: crossings / (n-1) adjacent pairs, exact-zero double-count documented."""
+    assert tsx.zero_crossing_rate(signal=array) == pytest.approx(expected, abs=1e-6)
+
+
+def test_zero_crossing_rate_edge_cases():
+    """Edge cases: counting-based feature — NaN/inf do NOT propagate to NaN.
+
+    These assertions pin down the actual (documented) behaviour rather than
+    an idealised one; see the docstring of zero_crossing_rate.
+    """
+    assert jnp.isnan(tsx.zero_crossing_rate(signal=jnp.array([5.0])))
+    assert tsx.zero_crossing_rate(signal=jnp.array([jnp.inf, jnp.inf])) == 0.0
+    assert tsx.zero_crossing_rate(signal=jnp.array([jnp.inf, -jnp.inf])) == 1.0
+    assert tsx.zero_crossing_rate(signal=jnp.array([jnp.nan, jnp.nan])) == 1.0
+    assert tsx.zero_crossing_rate(signal=jnp.array([0.0, jnp.nan, 1.0])) == 1.0
+
+
+@pytest.mark.parametrize(
+    argnames=("array", "lags", "expected"),
+    argvalues=[
+        # increasing ramp [1,2,3,4]: mean=2.5, denom=5.0
+        # r1 = 1.25/5 = 0.25, r2 = -1.5/5 = -0.3, r3 = -2.25/5 = -0.45 (hand-calculated)
+        (jnp.array([1.0, 2.0, 3.0, 4.0]), (1, 2, 3), jnp.array([0.25, -0.3, -0.45])),
+        # alternating short signal [1,-1,1,-1]: boundary effect makes r1=-0.75 (not -1), r2=+0.5
+        (jnp.array([1.0, -1.0, 1.0, -1.0]), (1, 2), jnp.array([-0.75, 0.5])),
+        # long alternating signal: r1 approaches -1, r2 approaches +1 (period-2 structure)
+        (jnp.array([1.0, -1.0] * 25), (2,), jnp.array([0.96])),
+    ],
+)
+def test_autocorrelation(array, lags, expected):
+    """Test autocorrelation against hand-calculated reference values."""
+    assert jnp.allclose(tsx.autocorrelation(signal=array, lags=lags), expected, atol=1e-2)
+
+
+def test_autocorrelation_edge_cases():
+    """Autocorrelation requires 0 <= lag < signal length."""
+    with pytest.raises(ValueError):
+        tsx.autocorrelation(signal=jnp.array([]), lags=(1,))
+    with pytest.raises(ValueError):
+        tsx.autocorrelation(signal=jnp.array([1.0]), lags=(1,))
+    with pytest.raises(ValueError):
+        tsx.autocorrelation(signal=jnp.array([1.0, 2.0]), lags=(2,))
+
+
+def test_autocorrelation_constant_signal_is_nan():
+    """Constant signal has zero variance -> NaN, consistent with skewness/kurtosis."""
+    result = tsx.autocorrelation(signal=jnp.array([3.0, 3.0, 3.0]), lags=(1,))
+    assert jnp.isnan(result).all()
+    
