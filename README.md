@@ -21,7 +21,8 @@ from tsxtract.extraction import extract_features
 
 # Dataset is a 3d-numpy or jax array with following dimensions:
 # (samples, channels, length)
-features = extract_features(dataset)
+# sampling_rate is the sampling rate of the dataset in Hz, required by the frequency-domain features
+features = extract_features(dataset,sampling_rate=100)
 
 print(type(features)) # dict
 print(features["mean"].shape) # jax.Array of size (samples, channels)
@@ -45,9 +46,23 @@ Step 5: Test your setup by executing the `main.py` script: ```uv run main.py```
 
 ## Overview of Extracted Features
 
+**Temporal features:**
 - Maximum
 - Mean
 - Minimum
+- Mean
+- Median
+- Standard deviation
+- Variance
+- Root mean square (RMS)
+- Mean absolute deviation (MAD)
+- Percentiles (25th, 75th)
+- Skewness, Kurtosis (excess)
+- Zero-crossing rate
+- Autocorrelation (lags 1, 2, 3)
+
+**Frequency-domain features:**
+- Spectral centroid
 
 ## Contributing
 

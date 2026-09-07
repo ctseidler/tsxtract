@@ -18,5 +18,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "coverage>=7.9.2",
+    "numpy>=2.0",
     "pytest>=8.4.1",
+    "scipy>=1.14",
 ]
