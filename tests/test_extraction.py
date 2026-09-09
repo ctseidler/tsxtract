@@ -1,4 +1,4 @@
-"""Test suite for `tsxtract.extraction.py`."""
+"""Test suite for the tsxtract feature functions, configuration and extractor."""
 
 import jax
 import jax.numpy as jnp
@@ -18,6 +18,47 @@ A relative tolerance is meaningless against zero. Note that pytest.approx
 takes the larger of the two when both are given, so this constant must
 never appear next to a non-zero expected value -- it would silently
 widen that assertion.
+"""
+
+CONSTANT_SIGNALS = (
+    jnp.ones(64),
+    jnp.zeros(64),
+    jnp.array([5.0]),
+    jnp.array([1e18, 1e18]),
+)
+"""Signals whose spectrum is all-zero after DC removal.
+
+Every spectral feature must return NaN for each of them.
+"""
+
+REFERENCE_SIGNALS = (
+    jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
+    jnp.array([0.0, -1.0, 1.0, -1.0]),
+    jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
+    jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
+)
+"""Short, irregular signals for the NumPy cross-checks.
+
+None of them is constant, and after DC removal each has at least two
+non-zero bins, so no spectral feature lands in its degenerate region.
+"""
+
+TEMPORAL_REFERENCE_SIGNALS = (
+    jnp.ones(5),
+    jnp.zeros(5),
+    -jnp.ones(5),
+    jnp.array([5.0]),
+    jnp.array([-1.0, 0.0, 1.0, 0.0, -1.0]),
+    jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0]),
+    jnp.array([1.0, 1.0, 1.0, 1.0, 10.0]),
+    jnp.array([3.0, 3.0, 3.0, 3.0, 2.0]),
+    jnp.array([1e18, 1e18]),
+    jnp.array([-1e18, -1e18]),
+)
+"""Well-behaved signals for the NumPy cross-checks of temporal features.
+
+Constant and single-element signals are included: unlike the spectral
+features, the temporal ones are defined for them.
 """
 
 def _acf_reference(x, lag):
@@ -241,21 +282,7 @@ def test_median_edge_cases():
     assert jnp.isnan(tsx.median(signal=jnp.array([0, jnp.nan, jnp.inf, 1])))
 
 
-@pytest.mark.parametrize(
-    argnames="array",
-    argvalues=[
-        (jnp.ones(5)),
-        (jnp.zeros(5)),
-        (-jnp.ones(5)),
-        (jnp.array([5.0])),
-        (jnp.array([-1.0, 0.0, 1.0, 0.0, -1.0])),
-        (jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0])),
-        (jnp.array([1.0, 1.0, 1.0, 1.0, 10.0])),
-        (jnp.array([3.0, 3.0, 3.0, 3.0, 2.0])),
-        (jnp.array([1e18, 1e18])),
-        (jnp.array([-1e18, -1e18])),
-    ],
-)
+@pytest.mark.parametrize("array", TEMPORAL_REFERENCE_SIGNALS)
 def test_rms(array):
     """Test extraction of root mean square value against a NumPy float64 reference."""
     x = np.asarray(array, dtype=np.float64)
@@ -273,26 +300,13 @@ def test_rms_edge_cases():
     assert jnp.isinf(tsx.rms(signal=jnp.array([0, -jnp.inf, 1])))
     assert jnp.isnan(tsx.rms(signal=jnp.array([0, jnp.nan, jnp.inf, 1])))
 
-@pytest.mark.parametrize(
-    argnames="array",
-    argvalues=[
-        (jnp.ones(5)),
-        (jnp.zeros(5)),    
-        (-jnp.ones(5)),
-        (jnp.array([5.0])),
-        (jnp.array([-1.0, 0.0, 1.0, 0.0, -1.0])),
-        (jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0])),
-        (jnp.array([1.0, 1.0, 1.0, 1.0, 10.0])),
-        (jnp.array([3.0, 3.0, 3.0, 3.0, 2.0])),
-        (jnp.array([1e18, 1e18])),
-        (jnp.array([-1e18, -1e18])),
-    ],
-)
+
+@pytest.mark.parametrize("array", TEMPORAL_REFERENCE_SIGNALS)
 def test_mad(array):
     """Test extraction of mean absolute deviation value against a NumPy float64 reference."""
     x = np.asarray(array, dtype=np.float64)
     expected = np.mean(np.abs(x - np.mean(x)))
-    assert tsx.mad(signal=array) == pytest.approx(expected, rel=RELATIVE_TOLERANCE)       
+    assert tsx.mad(signal=array) == pytest.approx(expected, rel=RELATIVE_TOLERANCE)    
 
 def test_mad_edge_cases(): 
     """Test extraction of mean absolute deviation on edge cases."""
@@ -472,15 +486,7 @@ def test_spectral_centroid(frequency, sampling_rate):
     assert tsx.spectral_centroid(signal, sampling_rate) == pytest.approx(frequency, rel=RELATIVE_TOLERANCE)
 
 
-@pytest.mark.parametrize(
-    argnames="array",
-    argvalues=[
-        jnp.array([-1.0, 0.0, 1.0, 0.0, -1.0]),
-        jnp.array([-1.0, 0.0, 1.0, 2.0, 3.0]),
-        jnp.array([1.0, 1.0, 1.0, 1.0, 10.0]),
-        jnp.array([3.0, 3.0, 3.0, 3.0, 2.0]),
-    ],
-)
+@pytest.mark.parametrize("array", REFERENCE_SIGNALS)
 def test_spectral_centroid_numpy_reference(array):
     """Same convention (DC removed, magnitude, Hz) recomputed in NumPy float64."""
     sampling_rate = 100.0
@@ -501,13 +507,10 @@ def test_spectral_centroid_offset_invariant():
         pytest.approx(tsx.spectral_centroid(signal, 100.0), rel=RELATIVE_TOLERANCE)
 
 
-def test_spectral_centroid_edge_cases():
-    """Constant signal has zero spectral energy -> NaN, consistent with skewness."""
-    assert jnp.isnan(tsx.spectral_centroid(jnp.ones(64), 100.0))
-    assert jnp.isnan(tsx.spectral_centroid(jnp.zeros(64), 100.0))
-    assert jnp.isnan(tsx.spectral_centroid(jnp.array([5.0]), 100.0))
-    assert jnp.isnan(tsx.spectral_centroid(jnp.array([1e18, 1e18]), 100.0))
-
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)    
+def test_spectral_centroid_edge_cases(signal: jax.Array) -> None:  
+    """Constant signal has zero spectral energy -> NaN, consistent with skewness.""" 
+    assert jnp.isnan(tsx.spectral_centroid(signal, 100.0))
 
 # spectral_bandwidth test
 @pytest.mark.parametrize(
@@ -524,8 +527,6 @@ def test_spectral_centroid_edge_cases():
         (10.0, 3.0, 20.0, 1.0, 4.330127018922194),
     ],
 )
-
-
 def test_spectral_bandwidth(
     frequency_a: float,
     amplitude_a: float,
@@ -565,15 +566,7 @@ def test_spectral_bandwidth_single_tone() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_spectral_bandwidth_numpy_reference(signal: jax.Array) -> None:
     # Arrays must stay out of the feature's degenerate region: after DC
     # removal the spectrum needs at least two non-zero bins, otherwise
@@ -611,15 +604,7 @@ def test_spectral_bandwidth_offset_invariant() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_spectral_bandwidth_edge_cases(signal: jax.Array) -> None:
     # Constant signals have an all-zero spectrum after DC removal:
     # the distribution is 0/0 -> NaN, and NaN propagates to the feature.
@@ -665,15 +650,7 @@ def test_spectral_rolloff_single_tone() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_spectral_rolloff_numpy_reference(signal: jax.Array) -> None:
     sampling_rate = 100.0
     # Same convention as tsxtract: remove DC before the FFT.
@@ -703,15 +680,7 @@ def test_spectral_rolloff_offset_invariant() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_spectral_rolloff_edge_cases(signal: jax.Array) -> None:
     # Constant signals: NaN weights make every comparison False, so
     # without the explicit guard argmax would silently return 0.0 Hz.
@@ -731,7 +700,6 @@ def test_spectral_rolloff_edge_cases(signal: jax.Array) -> None:
         (1.0, 1.0, 10.0),
     ],
 )
-
 def test_dominant_frequency(
     amplitude_a: float, amplitude_b: float, expected_frequency: float
 ) -> None:
@@ -756,15 +724,7 @@ def test_dominant_frequency_grid_quantisation() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_dominant_frequency_numpy_reference(signal: jax.Array) -> None:
     sampling_rate = 100.0
     # Same convention as tsxtract: remove DC before the FFT.
@@ -790,15 +750,7 @@ def test_dominant_frequency_offset_invariant() -> None:
         tsx.dominant_frequency(signal, sampling_rate), rel=RELATIVE_TOLERANCE
     )
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_dominant_frequency_edge_cases(signal: jax.Array) -> None:
     # Constant signal: NaN weights, argmax would silently return 0.0 Hz.
     assert jnp.isnan(tsx.dominant_frequency(signal, 100.0))
@@ -853,15 +805,7 @@ def test_spectral_entropy_bounds() -> None:
     assert 0.9 < entropy <= 1.0
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_spectral_entropy_numpy_reference(signal: jax.Array) -> None:
     sampling_rate = 100.0
     # Same convention as tsxtract: remove DC, magnitude weighting,
@@ -890,15 +834,7 @@ def test_spectral_entropy_offset_invariant() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_spectral_entropy_edge_cases(signal: jax.Array) -> None:
     # Constant signal: NaN weights propagate through the arithmetic, no
     # explicit guard needed (unlike rolloff / dominant_frequency).
@@ -1042,15 +978,7 @@ def test_band_energy_bands_sum_to_one() -> None:
     assert total == pytest.approx(1.0, rel=RELATIVE_TOLERANCE)
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_band_energy_numpy_reference(signal: jax.Array) -> None:
     sampling_rate = 100.0
     low_frequency, high_frequency = 10.0, 30.0
@@ -1080,15 +1008,7 @@ def test_band_energy_offset_invariant() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_band_energy_edge_cases(signal: jax.Array) -> None:
     # Constant signal: no energy at all, 0 / 0 propagates to NaN.
     assert jnp.isnan(tsx.band_energy(signal, 100.0, 5.0, 15.0))
@@ -1175,15 +1095,7 @@ def test_power_bandwidth_widens_with_fraction() -> None:
     assert widths[-1] > widths[0]
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.array([1.0, 2.0, 3.0, 4.0, 5.0]),
-        jnp.array([0.0, -1.0, 1.0, -1.0]),
-        jnp.array([-5.0, 3.0, 0.5, 100.0, -20.0, 7.0]),
-        jnp.array([0.1, 0.5, 0.2, 0.9, 0.4]),
-    ],
-)
+@pytest.mark.parametrize("signal", REFERENCE_SIGNALS)
 def test_power_bandwidth_numpy_reference(signal: jax.Array) -> None:
     sampling_rate = 100.0
     power_fraction = 0.90
@@ -1215,15 +1127,7 @@ def test_power_bandwidth_offset_invariant() -> None:
     )
 
 
-@pytest.mark.parametrize(
-    "signal",
-    [
-        jnp.ones(64),
-        jnp.zeros(64),
-        jnp.array([5.0]),
-        jnp.array([1e18, 1e18]),
-    ],
-)
+@pytest.mark.parametrize("signal", CONSTANT_SIGNALS)
 def test_power_bandwidth_edge_cases(signal: jax.Array) -> None:
     # Constant signal: NaN weights make every comparison False, so both
     # argmax calls return index 0 and the width would silently be 0.0 Hz
