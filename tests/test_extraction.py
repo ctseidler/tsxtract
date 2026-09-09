@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 import scipy.stats
 
-import tsxtract.extraction as tsx
+import tsxtract as tsx
 from tsxtract.utils import generate_random_time_series_dataset
 
 RELATIVE_TOLERANCE = 1e-9
@@ -904,6 +904,77 @@ def test_spectral_entropy_edge_cases(signal: jax.Array) -> None:
     # explicit guard needed (unlike rolloff / dominant_frequency).
     assert jnp.isnan(tsx.spectral_entropy(signal, 100.0))
 
+def test_spectral_entropy_default_is_magnitude() -> None:
+    # The default must stay magnitude weighting: it is what keeps this
+    # feature consistent with the other spectral_* features, and what the
+    # pinned default output names in EXPECTED_FEATURE_NAMES assume.
+    sampling_rate = 100.0
+    time = jnp.arange(512) / sampling_rate
+    signal = jnp.sin(2 * jnp.pi * 7.0 * time) + 0.4 * jnp.sin(
+        2 * jnp.pi * 23.0 * time
+    )
+    assert tsx.spectral_entropy(signal, sampling_rate) == pytest.approx(
+        tsx.spectral_entropy(signal, sampling_rate, weighting="magnitude"),
+        rel=RELATIVE_TOLERANCE,
+    )
+
+
+def test_spectral_entropy_power_weighting_numpy_reference() -> None:
+    # Same formula as the magnitude reference above, but with the
+    # magnitude squared -- this is TSFEL's convention.
+    sampling_rate = 100.0
+    time = jnp.arange(512) / sampling_rate
+    signal = jnp.sin(2 * jnp.pi * 7.0 * time) + 0.4 * jnp.sin(
+        2 * jnp.pi * 23.0 * time
+    )
+    centred = np.asarray(signal) - np.mean(np.asarray(signal))
+    power = np.abs(np.fft.rfft(centred)) ** 2
+    weights = power / np.sum(power)
+    non_zero = weights[weights > 0]
+    expected_entropy = -np.sum(non_zero * np.log2(non_zero)) / np.log2(
+        weights.size
+    )
+    assert tsx.spectral_entropy(
+        signal, sampling_rate, weighting="power"
+    ) == pytest.approx(expected_entropy, rel=RELATIVE_TOLERANCE)
+
+
+def test_spectral_entropy_power_weighting_is_more_peaked() -> None:
+    # Squaring the magnitude sharpens the distribution: strong bins get
+    # relatively stronger, so the entropy can only go down.
+    sampling_rate = 100.0
+    time = jnp.arange(512) / sampling_rate
+    signal = jnp.sin(2 * jnp.pi * 7.0 * time) + 0.4 * jnp.sin(
+        2 * jnp.pi * 23.0 * time
+    )
+    assert tsx.spectral_entropy(
+        signal, sampling_rate, weighting="power"
+    ) < tsx.spectral_entropy(signal, sampling_rate, weighting="magnitude")
+
+
+def test_spectral_entropy_rejects_unknown_weighting() -> None:
+    with pytest.raises(ValueError, match="weighting"):
+        tsx.spectral_entropy(jnp.arange(16.0), 100.0, weighting="energy")
+
+
+def test_spectral_entropy_weighting_is_configurable_through_spec() -> None:
+    # The parameter has to survive the FeatureSpec route as well, and it
+    # has to show up in the output name so the two variants can live side
+    # by side in one feature table.
+    spec = tsx.FeatureSpec(tsx.spectral_entropy, weighting="power")
+    assert spec.output_name == "spectral_entropy__weighting_power"
+
+    sampling_rate = 100.0
+    time = jnp.arange(512) / sampling_rate
+    signal = jnp.sin(2 * jnp.pi * 7.0 * time)
+    dataset = signal.reshape(1, 1, -1)
+    features = tsx.extract_features(
+        dataset, sampling_rate=sampling_rate, feature_specs=(spec,)
+    )
+    assert features["spectral_entropy__weighting_power"][0, 0] == pytest.approx(
+        tsx.spectral_entropy(signal, sampling_rate, weighting="power"),
+        rel=RELATIVE_TOLERANCE,
+    )
 
 # ---------band_energy test------------------
 @pytest.mark.parametrize(

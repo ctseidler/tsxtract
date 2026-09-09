@@ -9,6 +9,25 @@ tsxtract.extraction
    :show-inheritance:
    :undoc-members:
 
+
+tsxtract.features
+--------------------------
+
+.. automodule:: tsxtract.features
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+
+tsxtract.feature_settings
+--------------------------
+
+.. automodule:: tsxtract.feature_settings
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+
 tsxtract.utils
 ---------------------
 
