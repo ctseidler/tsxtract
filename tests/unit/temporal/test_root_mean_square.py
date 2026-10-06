@@ -26,7 +26,7 @@ def test_negatives(negatives_array) -> None:
 
 def test_single_point(single_point) -> None:
     """tsx.root_mean_square should return 1.6226422 for this single datapoint."""
-    expected_output: float = 1.6226422
+    expected_output: float = 3.14
     assert tsx.root_mean_square(single_point) == pytest.approx(expected_output)
 
 

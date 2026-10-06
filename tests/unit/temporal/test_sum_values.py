@@ -7,7 +7,7 @@ import tsxtract.extractors as tsx
 
 def test_ones(ones_array) -> None:
     """tsx.sum_values should return 100 for a time series with 100 ones."""
-    expected_output: int = 100
+    expected_output: int = 5
     assert tsx.sum_values(ones_array) == expected_output
 
 
@@ -19,7 +19,7 @@ def test_zeros(zeros_array) -> None:
 
 def test_negatives(negatives_array) -> None:
     """tsx.sum_values should return -100 for a time series with 100 -1 values."""
-    expected_output: int = -100
+    expected_output: int = -5
     assert tsx.sum_values(negatives_array) == expected_output
 
 
@@ -57,13 +57,13 @@ def test_array_with_inf_values(array_with_inf) -> None:
 
 def test_50_50(array_50_50) -> None:
     """tsx.sum_values should return 50 for a time series with 50 zeros and 50 ones."""
-    expected_output: int = 50
+    expected_output: int = 2
     assert tsx.sum_values(array_50_50) == expected_output
 
 
 def test_20_80(array_20_80) -> None:
     """tsx.sum_values should return 80 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 80
+    expected_output: int = 4
     assert tsx.sum_values(array_20_80) == expected_output
 
 

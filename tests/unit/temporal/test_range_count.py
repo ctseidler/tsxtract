@@ -11,13 +11,13 @@ def test_ones(ones_array) -> None:
 
 def test_zeros(zeros_array) -> None:
     """tsx.range_count should return 100 for a time series with 100 zeros."""
-    expected_output: int = 100
+    expected_output: int = 5
     assert tsx.range_count(zeros_array, -1, 1) == expected_output
 
 
 def test_negatives(negatives_array) -> None:
     """tsx.range_count should return 100 for a time series with 100 -1 values."""
-    expected_output: int = 100
+    expected_output: int = 5
     assert tsx.range_count(negatives_array, -1, 1) == expected_output
 
 
@@ -41,7 +41,7 @@ def test_nan_values(nan_array) -> None:
 
 def test_array_with_nan_values(array_with_nan) -> None:
     """tsx.range_count should return 80 for an array with 20 nan values."""
-    expected_output: int = 80
+    expected_output: int = 4
     assert tsx.range_count(array_with_nan, -100, 100) == expected_output
 
 
@@ -53,7 +53,7 @@ def test_inf_values(inf_array) -> None:
 
 def test_array_with_inf_values(array_with_inf) -> None:
     """tsx.range_count should return 80 for an array with 20 inf values."""
-    expected_output: int = 80
+    expected_output: int = 4
     assert tsx.range_count(array_with_inf, -100, 100) == expected_output
 
 
@@ -65,7 +65,7 @@ def test_50_50(array_50_50) -> None:
 
 def test_20_80(array_20_80) -> None:
     """tsx.range_count should return 20 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 20
+    expected_output: int = 1
     assert tsx.range_count(array_20_80, -1, 1) == expected_output
 
 

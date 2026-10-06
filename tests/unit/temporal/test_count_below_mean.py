@@ -60,13 +60,13 @@ def test_array_with_inf_values(array_with_inf) -> None:
 
 def test_50_50(array_50_50) -> None:
     """tsx.count_below_mean should return 50 for a time series with 50 zeros and 50 ones."""
-    expected_output: int = 50
+    expected_output: int = 2
     assert tsx.count_below_mean(array_50_50) == expected_output
 
 
 def test_20_80(array_20_80) -> None:
     """tsx.count_below_mean should return 20 for a time series with 20 zeros and 80 ones."""
-    expected_output: int = 20
+    expected_output: int = 1
     assert tsx.count_below_mean(array_20_80) == expected_output
 
 

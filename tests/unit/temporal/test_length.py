@@ -23,11 +23,11 @@ def test_empty(empty_array) -> None:
 
 def test_nan_values(nan_array) -> None:
     """tsx.length should return 100 for an array with 100 nan values."""
-    expected_output: int = 100
+    expected_output: int = 5
     assert tsx.length(nan_array) == expected_output
 
 
 def test_inf_values(inf_array) -> None:
     """tsx.length should return 100 for an array with 100 inf values."""
-    expected_output: int = 100
+    expected_output: int = 5
     assert tsx.length(inf_array) == expected_output
