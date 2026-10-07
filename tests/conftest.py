@@ -84,3 +84,25 @@ def nan_inf_finite_array() -> jax.Array:
 def large_numbers_array() -> jax.Array:
     """Array with very large finite values to check overflow handling."""
     return jnp.array([1e18, 1e18, 1e18, 1e18])
+
+@pytest.fixture                              
+def array_positive_range() -> jax.Array:     
+    """Integers from 0 to 100 (101 values)."""   
+    return jnp.arange(0, 101)
+
+@pytest.fixture
+def array_negative_range() -> jax.Array:
+    """Integers from -100 to 0 (101 values)."""
+    return jnp.arange(-100, 1)
+
+
+@pytest.fixture
+def array_positive_and_negative_range() -> jax.Array:
+    """Integers from -50 to 50 (101 values)."""
+    return jnp.arange(-50, 51)
+
+
+@pytest.fixture
+def normal_array() -> jax.Array:
+    """Array with 100 standard-normal values."""
+    return jax.random.normal(jax.random.key(0), shape=(100,))
