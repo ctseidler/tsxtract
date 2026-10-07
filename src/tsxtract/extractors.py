@@ -2057,3 +2057,32 @@ def zero_cross_rate(time_series: jax.Array) -> jax.Array:
     signs = jnp.sign(time_series)
     zero_crossings = jnp.sum(jnp.diff(signs) != 0)
     return zero_crossings
+
+
+@jax.jit
+def mean_absolute_deviation(time_series: jax.Array) -> jax.Array:
+    r"""
+    Calculate the mean absolute deviation of the time series.
+
+    .. math::
+
+        \mathrm{MAD} = \frac{1}{N} \sum_{t=1}^N |x_t - \bar{x}|
+
+    where :math:`\bar{x}` is the mean of the time series. Less sensitive to
+    outliers than the standard deviation, which squares the deviations.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the mean absolute deviation.
+        Returns NaN if the time series is empty.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    return jnp.mean(jnp.abs(time_series - jnp.mean(time_series)))
