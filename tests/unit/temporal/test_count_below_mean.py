@@ -30,9 +30,8 @@ def test_single_point(single_point) -> None:
 
 
 def test_empty(empty_array) -> None:
-    """tsx.count_below_mean should return 0 for an empty sequence."""
-    expected_output: int = 0
-    assert tsx.count_below_mean(empty_array) == expected_output
+    """tsx.count_below_mean should return nan for an empty sequence."""
+    assert jnp.isnan(tsx.count_below_mean(empty_array))
 
 
 def test_nan_values(nan_array) -> None:
@@ -86,3 +85,4 @@ def test_positive_and_negative_range(array_positive_and_negative_range) -> None:
     """tsx.count_below_mean should return 50 for a range from -50 to 50."""
     expected_output: int = 50
     assert tsx.count_below_mean(array_positive_and_negative_range) == expected_output
+

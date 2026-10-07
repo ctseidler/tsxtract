@@ -30,9 +30,8 @@ def test_single_point(single_point) -> None:
 
 
 def test_empty(empty_array) -> None:
-    """tsx.sum_values should return 0 for an empty sequence."""
-    expected_output: int = 0
-    assert tsx.sum_values(empty_array) == expected_output
+    """tsx.sum_values should return nan for an empty sequence."""
+    assert jnp.isnan(tsx.sum_values(empty_array))
 
 
 def test_nan_values(nan_array) -> None:
