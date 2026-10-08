@@ -1832,6 +1832,99 @@ def spectral_centroid(time_series: jax.Array, sampling_rate: float) -> jax.Array
     return jnp.sum(frequencies * weights)
 
 
+@partial(jax.jit, static_argnames=["sampling_rate"])
+def spectral_entropy(time_series: jax.Array, sampling_rate: float) -> jax.Array:
+    r"""
+    Calculate the normalised spectral entropy of the time series.
+
+    .. math::
+
+        H = -\frac{1}{\log_2 K} \sum_k w_k \log_2 w_k
+
+    where :math:`w_k` is the normalised magnitude spectrum and :math:`K` the
+    number of frequency bins. The entropy measures how evenly the spectrum is
+    spread: a pure tone gives 0, white noise approaches 1.
+
+    Differs from TSFEL, which uses the power spectrum and normalises by the
+    number of non-zero bins (undefined for a single non-zero bin).
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz. Only affects the frequency
+        axis, not the entropy itself; kept for a uniform spectral interface.
+
+    Returns
+    -------
+    jax.Array
+        Scalar in [0, 1] representing the normalised spectral entropy.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    _, weights = utils.spectral_distribution(time_series, sampling_rate)
+    # log2(0) is -inf and 0 * -inf is NaN; replace empty bins by 1 so that
+    # they contribute 0 * log2(1) = 0. NaN weights (constant signal) still
+    # propagate to NaN.
+    safe_weights = jnp.where(weights > 0, weights, 1.0)
+    entropy = -jnp.sum(weights * jnp.log2(safe_weights))
+    return entropy / jnp.log2(weights.shape[0])
+
+
+@partial(jax.jit, static_argnames=["sampling_rate", "roll_percent"])
+def spectral_rolloff(
+    time_series: jax.Array,
+    sampling_rate: float,
+    roll_percent: float = 0.85,
+) -> jax.Array:
+    r"""
+    Calculate the spectral rolloff of the time series.
+
+    .. math::
+
+        f_r = \min \left\{ f_k \;\middle|\; \sum_{j \le k} w_j \ge p \right\}
+
+    where :math:`w_j` is the normalised magnitude spectrum and :math:`p` the
+    roll percent. The cumulative weight is scanned from low to high frequency
+    and the first frequency reaching the threshold is returned.
+
+    Follows the magnitude convention of TSFEL and librosa; their defaults
+    differ (TSFEL hard-codes 0.95, librosa defaults to 0.85, adopted here).
+    The mean is subtracted first, unlike in both reference packages; on
+    zero-mean signals the results agree. Because the magnitude spectrum is
+    used, the rolloff is sensitive to a noise floor and biased upwards on
+    noisy signals; ``power_bandwidth`` is the power-based alternative.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+    roll_percent : float, optional
+        Fraction of the total spectral magnitude to accumulate, between
+        0 and 1, default is 0.85.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the spectral rolloff in Hz.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(time_series, sampling_rate)
+    cumulative = jnp.cumsum(weights)
+    index = jnp.argmax(cumulative >= roll_percent)
+    # NaN weights (constant signal) make every comparison False, so argmax
+    # would silently return index 0 (i.e. 0.0 Hz); restore the NaN contract.
+    return jnp.where(jnp.isnan(cumulative[-1]), jnp.nan, frequencies[index])
+
+
 @jax.jit
 def standard_deviation(time_series: jax.Array) -> jax.Array:
     """
