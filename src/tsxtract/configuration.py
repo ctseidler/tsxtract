@@ -103,6 +103,10 @@ class ExtractionConfiguration:
                 "spectral_rolloff": [{"sampling_rate": 100.0, "roll_percent": 0.85}],
                 "spectral_entropy": [{"sampling_rate": 100.0}],
                 "dominant_frequency": [{"sampling_rate": 100.0}],
+                "band_energy": [
+                    {"sampling_rate": 100.0, "low_frequency": 0.0, "high_frequency": 10.0},
+                    {"sampling_rate": 100.0, "low_frequency": 10.0, "high_frequency": 50.0},
+                ],
                 "ratio_beyond_r_sigma": [{"r": r} for r in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]],
                 "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
                 "value_count": [{"value": value} for value in [-1, 0, 1]],

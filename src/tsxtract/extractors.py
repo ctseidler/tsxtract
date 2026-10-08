@@ -220,6 +220,58 @@ def autocorrelation(time_series: jax.Array, lag: int) -> jax.Array:
     )
 
 
+@partial(jax.jit, static_argnames=["sampling_rate", "low_frequency", "high_frequency"])
+def band_energy(
+    time_series: jax.Array,
+    sampling_rate: float,
+    low_frequency: float,
+    high_frequency: float,
+) -> jax.Array:
+    r"""
+    Calculate the fraction of spectral energy inside a frequency band.
+
+    .. math::
+
+        E_{[f_l, f_h)} = \sum_{f_l \le f_k < f_h} p_k
+
+    where :math:`p_k` is the normalised power spectrum. The band is closed
+    at the lower and open at the upper edge, so adjacent bands do not count
+    a bin twice. The power spectrum is used because the feature describes
+    energy; the shape descriptors (centroid, bandwidth, rolloff, entropy)
+    use the magnitude spectrum instead.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+    low_frequency : float
+        Lower edge of the band in Hz (inclusive).
+    high_frequency : float
+        Upper edge of the band in Hz (exclusive).
+
+    Returns
+    -------
+    jax.Array
+        Scalar in [0, 1] representing the share of the total power inside the
+        band; 0 if no frequency bin falls inside the band.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(
+        time_series, sampling_rate, weighting="power"
+    )
+    in_band = (frequencies >= low_frequency) & (frequencies < high_frequency)
+    fraction = jnp.sum(jnp.where(in_band, weights, 0.0))
+    # NaN weights (constant signal): if no bin falls inside the band, where()
+    # masks every NaN away and the fraction would silently be 0.0; restore
+    # the NaN contract.
+    return jnp.where(jnp.isnan(weights).any(), jnp.nan, fraction)
+
+
 @partial(jax.jit, static_argnames=["max_bins"])
 def binned_entropy(time_series: jax.Array, max_bins: int) -> jax.Array:
     r"""
