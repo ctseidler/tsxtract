@@ -1645,6 +1645,57 @@ def positive_turning_points(time_series: jax.Array) -> jax.Array:
     return jnp.sum(is_pos_turning_point)
 
 
+@partial(jax.jit, static_argnames=["sampling_rate", "power_fraction"])
+def power_bandwidth(
+    time_series: jax.Array,
+    sampling_rate: float,
+    power_fraction: float = 0.9,
+) -> jax.Array:
+    r"""
+    Calculate the width of the frequency band carrying a given share of the power.
+
+    .. math::
+
+        B = f_{\text{upper}} - f_{\text{lower}}
+
+    where :math:`f_{\text{lower}}` and :math:`f_{\text{upper}}` are the lowest
+    frequencies at which the cumulative normalised power spectrum reaches
+    :math:`(1 - p) / 2` and :math:`(1 + p) / 2`. The band therefore holds the
+    central share :math:`p` of the power, leaving equal tails on both sides.
+    The mean is removed before the FFT.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+    power_fraction : float, optional
+        Share of the total power inside the band, between 0 and 1,
+        default is 0.9.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the bandwidth in Hz. A pure tone gives 0.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(
+        time_series, sampling_rate, weighting="power"
+    )
+    cumulative = jnp.cumsum(weights)
+    lower_index = jnp.argmax(cumulative >= (1.0 - power_fraction) / 2.0)
+    upper_index = jnp.argmax(cumulative >= (1.0 + power_fraction) / 2.0)
+    width = frequencies[upper_index] - frequencies[lower_index]
+    # NaN weights (constant signal) make every comparison False, both argmax
+    # calls return 0 and the width would silently be 0 Hz; restore the NaN
+    # contract.
+    return jnp.where(jnp.isnan(cumulative[-1]), jnp.nan, width)
+
+
 @jax.jit
 def quantile(time_series: jax.Array, q: float) -> jax.Array:
     """
