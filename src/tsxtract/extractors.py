@@ -1756,6 +1756,46 @@ def slope(time_series: jax.Array) -> jax.Array:
 
 
 @partial(jax.jit, static_argnames=["sampling_rate"])
+def spectral_bandwidth(time_series: jax.Array, sampling_rate: float) -> jax.Array:
+    r"""
+    Calculate the spectral bandwidth of the time series.
+
+    .. math::
+
+        f_b = \sqrt{\sum_k w_k \, (f_k - f_c)^2}
+
+    where :math:`f_k` are the FFT frequencies, :math:`w_k` the normalised
+    magnitude spectrum and :math:`f_c` the spectral centroid. The bandwidth
+    is the magnitude-weighted standard deviation of the spectrum, i.e. how
+    far the energy spreads around the centroid. Matches TSFEL's
+    ``spectral_spread`` up to DC handling (removed here, kept in TSFEL).
+
+    The centroid is computed first and the deviations are taken from it
+    (two-pass form) rather than using :math:`E[f^2] - E[f]^2`, which is
+    prone to cancellation.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the spectral bandwidth in Hz. A pure tone gives 0.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(time_series, sampling_rate)
+    centroid = jnp.sum(frequencies * weights)
+    return jnp.sqrt(jnp.sum(weights * (frequencies - centroid) ** 2))
+
+
+@partial(jax.jit, static_argnames=["sampling_rate"])
 def spectral_centroid(time_series: jax.Array, sampling_rate: float) -> jax.Array:
     r"""
     Calculate the spectral centroid of the time series.
