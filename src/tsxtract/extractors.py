@@ -553,6 +553,49 @@ def distance(time_series: jax.Array) -> jax.Array:
     return jnp.sum(jnp.sqrt(1 + differences**2))
 
 
+@partial(jax.jit, static_argnames=["sampling_rate"])
+def dominant_frequency(time_series: jax.Array, sampling_rate: float) -> jax.Array:
+    r"""
+    Calculate the dominant frequency of the time series.
+
+    .. math::
+
+        f_d = f_{\arg\max_k w_k}
+
+    where :math:`w_k` is the normalised magnitude spectrum. The dominant
+    frequency is the frequency of the strongest spectral component.
+    Magnitude and power weighting give the same answer, since squaring
+    does not change which bin is largest.
+
+    The result is quantised to the FFT grid (spacing ``sampling_rate / N``,
+    no interpolation between bins). Components above the Nyquist frequency
+    ``sampling_rate / 2`` are aliased, so a wrong sampling rate produces a
+    wrong but plausible-looking frequency. Neither tsfresh nor TSFEL
+    provides this feature.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the dominant frequency in Hz.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(time_series, sampling_rate)
+    index = jnp.argmax(weights)
+    # NaN weights (constant signal): argmax would silently return index 0
+    # (i.e. 0.0 Hz), so restore the NaN contract explicitly.
+    return jnp.where(jnp.isnan(weights).any(), jnp.nan, frequencies[index])
+
+
 @jax.jit
 def first_location_of_maximum(time_series: jax.Array) -> jax.Array:
     r"""

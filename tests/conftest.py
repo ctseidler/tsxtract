@@ -151,3 +151,9 @@ def two_tones() -> jax.Array:
 def loud_and_quiet_tone() -> jax.Array:
     """5 Hz sine wave with amplitude 3 plus a 15 Hz sine wave with amplitude 1."""
     return _tone(5.0, amplitude=3.0) + _tone(15.0, amplitude=1.0)
+
+
+@pytest.fixture
+def aliased_tone() -> jax.Array:
+    """60 Hz sine wave, above the Nyquist frequency of 50 Hz; aliases to 40 Hz."""
+    return _tone(60.0)
