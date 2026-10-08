@@ -4,6 +4,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+from tsxtract import utils
 
 
 @jax.jit
@@ -415,7 +416,7 @@ def count_above_mean(time_series: jax.Array) -> jax.Array:
 
     return jax.lax.cond(
         jnp.isnan(mean_val),
-        lambda _: jnp.array(0, dtype=jnp.int32),  # Mean is NaN --> no value above mean
+        lambda _: jnp.array(0),  # Mean is NaN --> no value above mean
         lambda _: jnp.sum(time_series > mean_val),
         operand=None,
     )
@@ -1752,6 +1753,43 @@ def slope(time_series: jax.Array) -> jax.Array:
         return jnp.array(jnp.nan)
     t = jnp.linspace(0, n - 1, n)
     return jnp.polyfit(t, time_series, 1)[0]
+
+
+@partial(jax.jit, static_argnames=["sampling_rate"])
+def spectral_centroid(time_series: jax.Array, sampling_rate: float) -> jax.Array:
+    r"""
+    Calculate the spectral centroid of the time series.
+
+    .. math::
+
+        f_c = \sum_k f_k \, w_k
+
+    where :math:`f_k` are the FFT frequencies and :math:`w_k` the normalised
+    magnitude spectrum. The centroid is the magnitude-weighted mean frequency,
+    i.e. the frequency around which the energy is concentrated.
+
+    The mean is subtracted before the FFT, so the result reflects the
+    oscillatory content rather than the offset. This differs from TSFEL,
+    which keeps the DC component; on zero-mean signals both agree.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+
+    Returns
+    -------
+    jax.Array
+        Scalar representing the spectral centroid in Hz.
+        Returns NaN if the time series is empty or constant.
+    """
+    time_series = jnp.asarray(time_series)
+    if time_series.size == 0:
+        return jnp.array(jnp.nan)
+    frequencies, weights = utils.spectral_distribution(time_series, sampling_rate)
+    return jnp.sum(frequencies * weights)
 
 
 @jax.jit

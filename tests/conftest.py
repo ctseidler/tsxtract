@@ -5,7 +5,13 @@ See: https://gist.github.com/peterhurford/09f7dcda0ab04b95c026c60fa49c2a68 for m
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 import pytest
+
+# Run the test suite in float64 so that expected values can be checked with a
+# single tight tolerance (see meeting 2026-08-28). Must be set before the first
+# array is created, hence here and not inside the individual tests.
+jax.config.update("jax_enable_x64", True)
 
 
 @pytest.fixture
@@ -106,3 +112,42 @@ def array_positive_and_negative_range() -> jax.Array:
 def normal_array() -> jax.Array:
     """Array with 100 standard-normal values."""
     return jax.random.normal(jax.random.key(0), shape=(100,))
+
+
+SAMPLING_RATE = 100.0
+
+
+def _tone(frequency: float, amplitude: float = 1.0, offset: float = 0.0) -> jax.Array:
+    """One second of a sine wave at SAMPLING_RATE, generated in float64."""
+    t = np.arange(0, 1.0, 1.0 / SAMPLING_RATE)
+    return jnp.asarray(amplitude * np.sin(2 * np.pi * frequency * t) + offset)
+
+
+@pytest.fixture
+def sampling_rate() -> float:
+    """Sampling rate shared by the spectral fixtures."""
+    return SAMPLING_RATE
+
+
+@pytest.fixture
+def single_tone() -> jax.Array:
+    """Pure 7 Hz sine wave."""
+    return _tone(7.0)
+
+
+@pytest.fixture
+def single_tone_with_offset() -> jax.Array:
+    """7 Hz sine wave with a DC offset of 1e4."""
+    return _tone(7.0, offset=1e4)
+
+
+@pytest.fixture
+def two_tones() -> jax.Array:
+    """Sum of a 5 Hz and a 15 Hz sine wave with equal amplitude."""
+    return _tone(5.0) + _tone(15.0)
+
+
+@pytest.fixture
+def loud_and_quiet_tone() -> jax.Array:
+    """5 Hz sine wave with amplitude 3 plus a 15 Hz sine wave with amplitude 1."""
+    return _tone(5.0, amplitude=3.0) + _tone(15.0, amplitude=1.0)

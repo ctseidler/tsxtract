@@ -98,6 +98,7 @@ class ExtractionConfiguration:
                     {"lower_bound": -1e12, "upper_bound": 0},
                     {"lower_bound": 0, "upper_bound": 1e12},
                 ],
+                "spectral_centroid": [{"sampling_rate": 100.0}],
                 "ratio_beyond_r_sigma": [{"r": r} for r in [0.5, 1, 1.5, 2, 2.5, 3, 5, 6, 7, 10]],
                 "time_reversal_asymmetry_statistic": [{"lag": lag} for lag in range(1, 4)],
                 "value_count": [{"value": value} for value in [-1, 0, 1]],

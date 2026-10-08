@@ -179,3 +179,52 @@ def convert_string_values_to_numeric(
 ) -> list[dict[str, int | float]]:
     """Convert string values in config to numeric values."""
     return [{k: parse_number(v) for k, v in d.items()} for d in config]
+
+
+def spectral_distribution(
+    time_series: jax.Array,
+    sampling_rate: float,
+    weighting: str = "magnitude",
+) -> tuple[jax.Array, jax.Array]:
+    """Compute the spectrum of a time series as a distribution over frequency.
+
+    Shared first stage of every spectral feature.
+
+    Parameters
+    ----------
+    time_series : jax.Array
+        1D array containing the time series values.
+    sampling_rate : float
+        Sampling rate of the time series in Hz.
+    weighting : str, optional
+        "magnitude" uses |X(f)| and is meant for shape descriptors
+        (centroid, bandwidth, rolloff, entropy); "power" uses |X(f)|^2
+        and is meant for features named for energy or power.
+        Default is "magnitude".
+
+    Returns
+    -------
+    tuple[jax.Array, jax.Array]
+        Frequencies in Hz and the corresponding weights, normalised to sum to 1.
+        The weights are NaN for a signal without spectral energy
+        (e.g. a constant signal), which every downstream feature reports as NaN.
+
+    Notes
+    -----
+    The mean is removed before the FFT so that the DC component does not
+    dominate the distribution.
+
+    """
+    if weighting not in ("magnitude", "power"):
+        msg = f"weighting must be 'magnitude' or 'power', got {weighting!r}"
+        raise ValueError(msg)
+
+    time_series = jnp.asarray(time_series)
+    centered = time_series - jnp.mean(time_series)
+    spectrum = jnp.abs(jnp.fft.rfft(centered))
+    if weighting == "power":
+        spectrum = spectrum**2
+    frequencies = jnp.fft.rfftfreq(time_series.shape[0], d=1.0 / sampling_rate)
+    total = jnp.sum(spectrum)
+    weights = jnp.where(total > 0, spectrum / total, jnp.nan)
+    return frequencies, weights
